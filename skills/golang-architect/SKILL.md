@@ -16,23 +16,6 @@ Expert assistant for Golang backend architecture with Gin Server, Layered Archit
 
 ## Usage
 
-### Create New Project (using go-symphony)
-
-```bash
-bash /mnt/skills/user/golang-architect/scripts/create-project.sh <project-name> [advanced]
-```
-
-**Arguments:**
-- `project-name` - Name of the project (required)
-- `advanced` - Set to `true` for advanced features prompt (optional)
-
-**Examples:**
-```bash
-bash /mnt/skills/user/golang-architect/scripts/create-project.sh my-api
-bash /mnt/skills/user/golang-architect/scripts/create-project.sh my-api true
-```
-
-Reference: [go-symphony](https://github.com/Tomlord1122/go-symphony)
 
 ### Initialize SQLC
 

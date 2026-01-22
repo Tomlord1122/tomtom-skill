@@ -14,6 +14,42 @@ Expert assistant for Golang backend architecture with Gin Server, Layered Archit
 3. Applies layered architecture patterns (Handler → Service → Repository)
 4. Provides implementation with proper error handling and testing
 
+## Usage
+
+### Create New Project (using go-symphony)
+
+```bash
+bash /mnt/skills/user/golang-architect/scripts/create-project.sh <project-name> [advanced]
+```
+
+**Arguments:**
+- `project-name` - Name of the project (required)
+- `advanced` - Set to `true` for advanced features prompt (optional)
+
+**Examples:**
+```bash
+bash /mnt/skills/user/golang-architect/scripts/create-project.sh my-api
+bash /mnt/skills/user/golang-architect/scripts/create-project.sh my-api true
+```
+
+Reference: [go-symphony](https://github.com/Tomlord1122/go-symphony)
+
+### Initialize SQLC
+
+```bash
+bash /mnt/skills/user/golang-architect/scripts/sqlc-init.sh [project-dir] [db-engine]
+```
+
+**Arguments:**
+- `project-dir` - Project directory (default: current directory)
+- `db-engine` - Database engine: postgresql, mysql, sqlite3 (default: postgresql)
+
+**Examples:**
+```bash
+bash /mnt/skills/user/golang-architect/scripts/sqlc-init.sh
+bash /mnt/skills/user/golang-architect/scripts/sqlc-init.sh ./my-project postgresql
+```
+
 ## Documentation Resources
 
 **Context7 Library ID:** `/websites/gin-gonic_en` (117 snippets, Score: 90.8)
@@ -22,6 +58,7 @@ Expert assistant for Golang backend architecture with Gin Server, Layered Archit
 - Gin: `https://gin-gonic.com/en/docs/`
 - sqlc: `https://docs.sqlc.dev/`
 - Supabase: Use `mcp__supabase__*` tools
+- go-symphony: `https://github.com/Tomlord1122/go-symphony`
 
 ## Layered Architecture Template
 

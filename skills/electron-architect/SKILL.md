@@ -15,6 +15,31 @@ Expert assistant for Electron desktop application architecture, Main/Renderer pr
 4. Provides packaging and distribution configuration
 5. Ensures security best practices
 
+## Usage
+
+### Scaffold New Project
+
+```bash
+bash /mnt/skills/user/electron-architect/scripts/scaffold-project.sh [project-name] [ui-framework] [package-manager]
+```
+
+**Arguments:**
+- `project-name` - Name of the project (default: my-electron-app)
+- `ui-framework` - UI framework: vanilla, react, svelte, vue (default: vanilla)
+- `package-manager` - Package manager: pnpm, npm, yarn (default: pnpm)
+
+**Examples:**
+```bash
+bash /mnt/skills/user/electron-architect/scripts/scaffold-project.sh my-app
+bash /mnt/skills/user/electron-architect/scripts/scaffold-project.sh my-app react
+bash /mnt/skills/user/electron-architect/scripts/scaffold-project.sh my-app svelte pnpm
+```
+
+**Security defaults:**
+- nodeIntegration: false
+- contextIsolation: true
+- sandbox: true
+
 ## Documentation Resources
 
 **Official Documentation:**

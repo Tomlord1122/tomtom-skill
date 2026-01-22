@@ -15,6 +15,33 @@ Expert assistant for comprehensive code review including security vulnerability 
 4. Identifies performance issues
 5. Provides actionable improvement suggestions
 
+## Usage
+
+### Fetch PR Diff
+
+```bash
+bash /mnt/skills/user/code-review-master/scripts/pr-diff.sh <pr-number> [repo] [format]
+```
+
+**Arguments:**
+- `pr-number` - Pull request number (required)
+- `repo` - Repository in owner/repo format (default: from git remote)
+- `format` - Output format: markdown, json, plain (default: markdown)
+
+**Examples:**
+```bash
+bash /mnt/skills/user/code-review-master/scripts/pr-diff.sh 123
+bash /mnt/skills/user/code-review-master/scripts/pr-diff.sh 123 owner/repo markdown
+bash /mnt/skills/user/code-review-master/scripts/pr-diff.sh 456 owner/repo json
+```
+
+**Output:**
+- PR metadata (title, author, base branch)
+- Changed files list
+- Diff content formatted for review
+
+**Requirements:** gh CLI installed and authenticated
+
 ## Review Dimensions
 
 ### 1. Security (OWASP Top 10)

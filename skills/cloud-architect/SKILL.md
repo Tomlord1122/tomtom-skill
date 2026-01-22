@@ -15,6 +15,41 @@ Expert assistant for Kubernetes deployments, Helm chart design, Terraform infras
 4. Includes security and cost considerations
 5. Generates validation commands
 
+## Usage
+
+### Validate Helm Chart
+
+```bash
+bash /mnt/skills/user/cloud-architect/scripts/validate-helm.sh [chart-path] [values-file] [kube-version]
+```
+
+**Arguments:**
+- `chart-path` - Path to Helm chart directory (default: current directory)
+- `values-file` - Custom values file for validation (optional)
+- `kube-version` - Kubernetes version to validate against (default: 1.28.0)
+
+**Examples:**
+```bash
+bash /mnt/skills/user/cloud-architect/scripts/validate-helm.sh ./my-chart
+bash /mnt/skills/user/cloud-architect/scripts/validate-helm.sh ./my-chart values-prod.yaml 1.29.0
+```
+
+### Validate Terraform
+
+```bash
+bash /mnt/skills/user/cloud-architect/scripts/validate-terraform.sh [tf-dir] [check-format]
+```
+
+**Arguments:**
+- `tf-dir` - Path to Terraform directory (default: current directory)
+- `check-format` - Check formatting: true/false (default: true)
+
+**Examples:**
+```bash
+bash /mnt/skills/user/cloud-architect/scripts/validate-terraform.sh
+bash /mnt/skills/user/cloud-architect/scripts/validate-terraform.sh ./infrastructure false
+```
+
 ## Documentation Resources
 
 **Official Documentation:**

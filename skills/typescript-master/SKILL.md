@@ -15,6 +15,31 @@ Expert assistant for TypeScript type system mastery including generics, conditio
 4. Uses `unknown` over `any`
 5. Leverages discriminated unions for safety
 
+## Usage
+
+### Run Type Check
+
+```bash
+bash /mnt/skills/user/typescript-master/scripts/type-check.sh [project-dir] [strict-mode]
+```
+
+**Arguments:**
+- `project-dir` - Project directory (default: current directory)
+- `strict-mode` - Enable strict checks: true/false (default: true)
+
+**Examples:**
+```bash
+bash /mnt/skills/user/typescript-master/scripts/type-check.sh
+bash /mnt/skills/user/typescript-master/scripts/type-check.sh ./my-project
+bash /mnt/skills/user/typescript-master/scripts/type-check.sh ./my-project false
+```
+
+**Checks:**
+- TypeScript compilation (noEmit)
+- Strict type checking
+- Unused variables/imports
+- tsconfig recommendations
+
 ## Documentation Resources
 
 **Official Documentation:**

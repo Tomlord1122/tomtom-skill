@@ -15,6 +15,44 @@ Expert assistant for Go language mastery including concurrency patterns, perform
 4. Includes testing examples when appropriate
 5. Considers concurrency safety
 
+## Usage
+
+### Run Linters
+
+```bash
+bash /mnt/skills/user/golang-master/scripts/lint.sh [project-dir] [fix-mode]
+```
+
+**Arguments:**
+- `project-dir` - Project directory (default: current directory)
+- `fix-mode` - Set to `true` to auto-fix issues (default: false)
+
+**Examples:**
+```bash
+bash /mnt/skills/user/golang-master/scripts/lint.sh
+bash /mnt/skills/user/golang-master/scripts/lint.sh ./my-project true
+```
+
+**Runs:** go vet, gofmt, staticcheck, golangci-lint, go mod tidy
+
+### Run Benchmarks
+
+```bash
+bash /mnt/skills/user/golang-master/scripts/benchmark.sh [project-dir] [pattern] [profile-type]
+```
+
+**Arguments:**
+- `project-dir` - Project directory (default: current directory)
+- `pattern` - Benchmark pattern to match (default: .)
+- `profile-type` - Profiling: none, cpu, mem, all (default: none)
+
+**Examples:**
+```bash
+bash /mnt/skills/user/golang-master/scripts/benchmark.sh
+bash /mnt/skills/user/golang-master/scripts/benchmark.sh . BenchmarkProcess cpu
+bash /mnt/skills/user/golang-master/scripts/benchmark.sh ./myproject . all
+```
+
 ## Documentation Resources
 
 **Official Documentation:**

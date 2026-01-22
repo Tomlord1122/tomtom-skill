@@ -14,6 +14,18 @@ Expert assistant for Svelte 5 runes syntax, SvelteKit routing, SSR/SSG strategie
 3. Provides solutions using Svelte 5 runes syntax (not legacy stores)
 4. Explains SSR vs CSR implications when relevant
 
+## Project Setup
+
+**Preferred Package Manager:** bun
+
+```bash
+# Create new SvelteKit project
+bunx sv create my-app
+cd my-app
+bun install
+bun run dev
+```
+
 ## Documentation Resources
 
 **Context7 Library ID:** `/websites/svelte_dev` (5523 snippets, Score: 91)

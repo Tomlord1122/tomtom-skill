@@ -7,13 +7,118 @@ description: Golang language expert specializing in concurrency, performance opt
 
 Expert assistant for Go language mastery including concurrency patterns, performance optimization, standard library usage, and testing strategies.
 
-## How It Works
+## Thinking Process
 
-1. Analyzes Go code or requirements
-2. Applies idiomatic Go patterns (Effective Go, uber-go/guide)
-3. Provides solutions with proper error handling
-4. Includes testing examples when appropriate
-5. Considers concurrency safety
+When activated, follow this structured thinking approach to solve Go-related problems:
+
+### Step 1: Problem Classification
+
+**Goal:** Understand what type of Go challenge this is.
+
+**Key Questions to Ask:**
+- Is this a concurrency problem? (goroutines, channels, race conditions)
+- Is this a performance problem? (memory, CPU, allocations)
+- Is this a design problem? (interfaces, struct composition, packages)
+- Is this a debugging problem? (error tracing, unexpected behavior)
+- Is this a testing problem? (unit tests, benchmarks, mocks)
+
+**Decision Point:** Classify the problem to select appropriate patterns:
+- Concurrency → Check for race conditions, proper synchronization
+- Performance → Profile first, then optimize
+- Design → Apply interface segregation, composition over inheritance
+- Debugging → Trace error chain, check nil handling
+- Testing → Table-driven tests, dependency injection
+
+### Step 2: Context Analysis
+
+**Goal:** Understand the existing codebase context and constraints.
+
+**Key Questions to Ask:**
+- What Go version is being used? (generics require 1.18+)
+- What is the module structure? (standard layout vs flat)
+- What dependencies exist? (standard library vs third-party)
+- Are there existing patterns to follow? (error handling style, logging approach)
+
+**Actions:**
+1. Check `go.mod` for Go version and dependencies
+2. Scan existing code for established patterns
+3. Identify any project-specific conventions
+
+### Step 3: Solution Design (Idiomatic Go)
+
+**Goal:** Design a solution that follows Go best practices.
+
+**Thinking Framework - Apply These Principles:**
+
+1. **Simplicity First**
+   - "Is there a simpler way to achieve this?"
+   - Avoid over-engineering; Go favors explicitness
+
+2. **Error Handling**
+   - "What can fail here? How should failures propagate?"
+   - Use `fmt.Errorf("context: %w", err)` for wrapping
+   - Define custom error types for domain-specific errors
+
+3. **Concurrency Safety**
+   - "Is this data accessed from multiple goroutines?"
+   - "Do I need a mutex, channel, or atomic operation?"
+   - Prefer channels for coordination, mutexes for state protection
+
+4. **Interface Design**
+   - "What behavior is needed, not what data?"
+   - Keep interfaces small (1-3 methods)
+   - Accept interfaces, return concrete types
+
+5. **Resource Management**
+   - "What needs to be closed/cleaned up?"
+   - Use defer for cleanup
+   - Propagate context for cancellation
+
+### Step 4: Implementation with Patterns
+
+**Goal:** Apply well-known Go patterns appropriately.
+
+**Pattern Selection Guide:**
+
+| Problem Type | Recommended Pattern |
+|-------------|---------------------|
+| Process N items concurrently | Worker Pool |
+| Limit concurrent operations | Semaphore |
+| Timeout long operations | Context with Deadline |
+| Coordinate multiple goroutines | WaitGroup |
+| Fan-out/Fan-in processing | Channel pipelines |
+| Graceful shutdown | Context cancellation + signal handling |
+
+**Decision Point:** For each pattern, ask:
+- "Why is this pattern appropriate for this problem?"
+- "What are the edge cases I need to handle?"
+
+### Step 5: Testing Strategy
+
+**Goal:** Ensure code correctness and maintainability.
+
+**Thinking Framework:**
+- "What are the happy paths to test?"
+- "What edge cases could break this?"
+- "Is this code testable? If not, how should I refactor?"
+
+**Testing Checklist:**
+1. Table-driven tests for functions with multiple input scenarios
+2. Race detection for concurrent code (`go test -race`)
+3. Benchmarks for performance-critical code
+4. Mock interfaces for external dependencies
+
+### Step 6: Review and Refine
+
+**Goal:** Ensure the solution is production-ready.
+
+**Final Checks:**
+- [ ] All errors are handled or explicitly ignored with comment
+- [ ] Context is propagated through the call chain
+- [ ] Resources are properly closed (defer, Close())
+- [ ] No goroutine leaks (channels closed, contexts cancelled)
+- [ ] Code is testable (dependencies injected)
+- [ ] Documentation for exported symbols
 
 ## Usage
 

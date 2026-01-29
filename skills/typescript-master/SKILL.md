@@ -7,13 +7,227 @@ description: TypeScript language expert specializing in type system, generics, c
 
 Expert assistant for TypeScript type system mastery including generics, conditional types, mapped types, type inference, and advanced patterns.
 
-## How It Works
+## Thinking Process
 
-1. Analyzes TypeScript code or type requirements
-2. Designs type-safe solutions
-3. Provides solutions with minimal type annotations (prefer inference)
-4. Uses `unknown` over `any`
-5. Leverages discriminated unions for safety
+When activated, follow this structured thinking approach to solve TypeScript type challenges:
+
+### Step 1: Problem Classification
+
+**Goal:** Understand what type of TypeScript challenge this is.
+
+**Key Questions to Ask:**
+- Is this a type design problem? (creating new types, modeling data)
+- Is this a type error problem? (debugging, fixing type mismatches)
+- Is this a type inference problem? (generics, conditional types)
+- Is this a type safety problem? (runtime validation, narrowing)
+- Is this a library typing problem? (third-party types, declaration files)
+
+**Decision Point:** Classify to select appropriate approach:
+- Type Design → Focus on modeling domain correctly
+- Type Error → Trace the type mismatch source
+- Type Inference → Design generics and constraints
+- Type Safety → Add runtime validation with type guards
+- Library Typing → Check @types packages, create declarations
+
+### Step 2: Context Analysis
+
+**Goal:** Understand the TypeScript environment and constraints.
+
+**Key Questions to Ask:**
+- What TypeScript version is in use? (5.0+ has new features)
+- What is the strictness level? (strict, noUncheckedIndexedAccess, etc.)
+- What is the module system? (ESM, CommonJS, bundler)
+- Are there existing type patterns to follow?
+
+**Actions:**
+1. Check `tsconfig.json` for compiler options
+2. Identify TypeScript version in `package.json`
+3. Review existing type patterns in the codebase
+
+**Version-Specific Features:**
+
+| Feature | Minimum Version |
+|---------|-----------------|
+| Generics | 2.0 |
+| Conditional Types | 2.8 |
+| Template Literal Types | 4.1 |
+| Const Type Parameters | 5.0 |
+| satisfies Operator | 4.9 |
+
+### Step 3: Type Design Principles
+
+**Goal:** Apply TypeScript best practices to the solution.
+
+**Thinking Framework - Core Principles:**
+
+1. **Prefer Inference Over Annotation**
+   - Let TypeScript infer when possible
+   - Annotate function parameters, return types for public APIs
+   - Use `satisfies` to check without widening
+
+2. **Use `unknown` Over `any`**
+   - `unknown` forces type checking before use
+   - `any` disables all type checking
+   - Exception: truly dynamic scenarios (rare)
+
+3. **Discriminated Unions for Variants**
+   - Use literal type discriminators
+   - Enables exhaustive checking
+   - Self-documenting code
+
+4. **Narrow Types, Don't Widen**
+   - Prefer `as const` for literal types
+   - Use type guards to narrow
+   - Avoid unnecessary type assertions
+
+**Type Design Questions:**
+- "What is the minimal type that describes this?"
+- "Can TypeScript infer this, or must I annotate?"
+- "Is this union exhaustive?"
+
+### Step 4: Error Diagnosis
+
+**Goal:** Systematically diagnose type errors.
+
+**Thinking Framework:**
+- "What does TypeScript expect vs what it received?"
+- "Where did the unexpected type originate?"
+- "Is this a structural or nominal mismatch?"
+
+**Common Error Patterns:**
+
+| Error Pattern | Likely Cause | Solution |
+|--------------|--------------|----------|
+| Type 'X' is not assignable to 'Y' | Missing property or wrong type | Add missing prop, fix type |
+| Property does not exist | Optional prop or wrong union member | Add type guard, check optional |
+| Type 'X' has no call signatures | Not a function type | Check function type |
+| Argument not assignable to 'never' | Exhausted union without handling | Add missing case handler |
+
+**Debugging Strategy:**
+1. Hover over variables to see inferred types
+2. Trace back to where the type was assigned
+3. Check for implicit `any` (enable noImplicitAny)
+4. Use `// @ts-expect-error` temporarily to isolate issues
+
+### Step 5: Generic Type Design
+
+**Goal:** Design reusable, type-safe generic functions and types.
+
+**Thinking Framework:**
+- "What type information flows through this function?"
+- "What constraints are needed on the type parameter?"
+- "Can I infer more than I'm currently inferring?"
+
+**Generic Design Patterns:**
+
+| Pattern | Use Case | Example |
+|---------|----------|---------|
+| Identity Generic | Preserve input type | `<T>(x: T) => T` |
+| Constrained Generic | Limit to subset | `<T extends object>` |
+| Mapped Type | Transform all props | `{ [K in keyof T]: ... }` |
+| Conditional Type | Type-level branching | `T extends U ? X : Y` |
+| Infer Keyword | Extract nested type | `T extends Promise<infer U> ? U : T` |
+
+**Generic Best Practices:**
+- Name parameters meaningfully (`TItem` not just `T`)
+- Add constraints that document intent
+- Provide defaults when sensible (`<T = string>`)
+- Test with edge cases (empty arrays, undefined, etc.)
+
+### Step 6: Type Narrowing Strategy
+
+**Goal:** Safely narrow types for runtime operations.
+
+**Thinking Framework:**
+- "How do I know this is type X at runtime?"
+- "What is the most reliable way to check?"
+- "Does this narrowing work for TypeScript?"
+
+**Narrowing Techniques:**
+
+| Technique | Best For | Example |
+|-----------|----------|---------|
+| typeof | Primitives | `typeof x === 'string'` |
+| instanceof | Class instances | `x instanceof Date` |
+| in operator | Property presence | `'name' in x` |
+| Discriminant | Tagged unions | `x.type === 'success'` |
+| Custom guard | Complex objects | `function isUser(x): x is User` |
+| Assertion function | Throw on invalid | `asserts x is User` |
+
+**Type Guard Pattern:**
+```typescript
+function isUser(obj: unknown): obj is User {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    'name' in obj &&
+    typeof (obj as User).id === 'string'
+  );
+}
+```
+
+### Step 7: Advanced Type Patterns
+
+**Goal:** Apply advanced patterns for complex scenarios.
+
+**Thinking Framework:**
+- "Is there a utility type that does this?"
+- "Can I compose existing types?"
+- "Is the type readable and maintainable?"
+
+**Advanced Patterns:**
+
+| Pattern | Purpose |
+|---------|---------|
+| Template Literal Types | String manipulation at type level |
+| Recursive Types | Tree structures, nested objects |
+| Branded Types | Nominal typing for primitives |
+| Builder Pattern Types | Accumulate type information |
+
+**Branded Type Example:**
+```typescript
+type UserId = string & { readonly __brand: unique symbol };
+
+function createUserId(id: string): UserId {
+  return id as UserId;
+}
+
+function fetchUser(id: UserId) { /* ... */ }
+
+// Type error: string is not UserId
+fetchUser("abc"); // Error!
+fetchUser(createUserId("abc")); // OK
+```
+
+### Step 8: Validation and Testing
+
+**Goal:** Ensure types are correct and maintainable.
+
+**Type Testing Strategies:**
+1. Use `@ts-expect-error` to test that invalid code fails
+2. Create type test files with assertions
+3. Use `Expect<Equal<A, B>>` utility for type assertions
+
+**Type Test Pattern:**
+```typescript
+// Type tests (no runtime code)
+type cases = [
+  Expect<Equal<ReturnType<typeof fn>, string>>,
+  Expect<Equal<Parameters<typeof fn>, [number, string]>>,
+];
+
+// Compile-time assertion utility
+type Expect<T extends true> = T;
+type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends
+  (<T>() => T extends Y ? 1 : 2) ? true : false;
+```
+
+**Maintainability Checklist:**
+- [ ] Types are documented with JSDoc
+- [ ] Complex types are broken into smaller pieces
+- [ ] Type names are descriptive
+- [ ] Exported types have explicit documentation
 
 ## Usage
 

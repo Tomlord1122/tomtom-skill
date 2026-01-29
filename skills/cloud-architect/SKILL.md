@@ -7,13 +7,189 @@ description: Cloud architecture expert for Kubernetes, Helm, Terraform, and AWS 
 
 Expert assistant for Kubernetes deployments, Helm chart design, Terraform infrastructure as code, and AWS EKS configuration.
 
-## How It Works
+## Thinking Process
 
-1. Analyzes infrastructure requirements
-2. Designs according to cloud-native best practices
-3. Provides deployable YAML/HCL code
-4. Includes security and cost considerations
-5. Generates validation commands
+When activated, follow this structured thinking approach to design cloud infrastructure:
+
+### Step 1: Requirements Discovery
+
+**Goal:** Understand the complete infrastructure requirements before designing.
+
+**Key Questions to Ask:**
+- What is the workload type? (stateless API, stateful database, batch processing)
+- What is the expected traffic pattern? (steady, spiky, scheduled)
+- What are the availability requirements? (99.9%, 99.99%, multi-region)
+- What are the data persistence needs? (ephemeral, persistent, backup)
+- What are the compliance requirements? (HIPAA, GDPR, SOC2)
+- What is the budget constraint?
+
+**Actions:**
+1. Identify all services/applications to be deployed
+2. Map dependencies between services
+3. Determine resource requirements (CPU, memory, storage)
+4. Clarify networking requirements (public, private, VPN)
+
+**Decision Point:** You should be able to articulate:
+- "This workload requires [X] with [Y] availability"
+- "The key constraints are [Z]"
+
+### Step 2: Architecture Pattern Selection
+
+**Goal:** Choose the appropriate deployment pattern for the requirements.
+
+**Thinking Framework - Match Requirements to Patterns:**
+
+| Requirement | Recommended Pattern |
+|-------------|---------------------|
+| Simple stateless API | Deployment + HPA + Service |
+| Database with persistence | StatefulSet + PVC |
+| Background processing | Job / CronJob |
+| Event-driven | KEDA with queue triggers |
+| Multi-tenant | Namespace isolation |
+| High availability | Multi-AZ, PodDisruptionBudget |
+| Zero-downtime deploys | Rolling update, blue-green |
+
+**Decision Criteria:**
+- **Deployment vs StatefulSet:** Is ordering/identity important?
+- **Ingress vs LoadBalancer:** Internal or external traffic?
+- **HPA vs KEDA:** CPU-based or event-based scaling?
+
+**Decision Point:** Select and justify:
+- "I recommend [X] pattern because [Y]"
+- "The trade-offs are [Z]"
+
+### Step 3: Security Design
+
+**Goal:** Build security into the architecture from the start.
+
+**Thinking Framework - Defense in Depth:**
+1. **Network Level:** What can talk to what?
+2. **Identity Level:** Who can do what?
+3. **Data Level:** How is data protected?
+
+**Security Checklist:**
+- [ ] **Network Policies:** Default deny, explicit allow
+- [ ] **RBAC:** Least privilege service accounts
+- [ ] **IRSA/Workload Identity:** Pod-level cloud permissions
+- [ ] **Secrets Management:** External secrets, sealed secrets, or KMS
+- [ ] **Pod Security Standards:** Restricted or baseline
+- [ ] **Image Security:** Signed images, vulnerability scanning
+- [ ] **Encryption:** In-transit (TLS) and at-rest (KMS)
+
+**Decision Point:** For each service, answer:
+- "What permissions does this service need?"
+- "What network access does it require?"
+
+### Step 4: High Availability Design
+
+**Goal:** Ensure the system remains available during failures.
+
+**Thinking Framework:**
+- "What happens when a node fails?"
+- "What happens when an AZ goes down?"
+- "What happens during deployments?"
+
+**HA Checklist:**
+- [ ] **Replicas:** Minimum 2 replicas for production
+- [ ] **Anti-affinity:** Spread pods across nodes/zones
+- [ ] **PodDisruptionBudget:** Maintain minimum availability
+- [ ] **Health Checks:** Liveness and readiness probes
+- [ ] **Graceful Shutdown:** preStop hooks, terminationGracePeriodSeconds
+- [ ] **Multi-AZ Storage:** For persistent volumes
+
+**Decision Point:** Define:
+- "Recovery Time Objective (RTO): [X]"
+- "Recovery Point Objective (RPO): [Y]"
+
+### Step 5: Scaling Strategy
+
+**Goal:** Design for appropriate scaling behavior.
+
+**Thinking Framework:**
+- "What metric indicates load?" (CPU, memory, queue depth, RPS)
+- "How quickly must we scale?"
+- "What is the cost implication of over-provisioning?"
+
+**Scaling Options:**
+
+| Scenario | Solution |
+|----------|----------|
+| CPU-bound workload | HPA with CPU target |
+| Memory-bound | HPA with memory target |
+| Queue-based | KEDA with queue length |
+| Traffic-based | HPA with custom metrics |
+| Scheduled load | CronJob for scaling |
+
+**Capacity Planning:**
+- Set resource requests based on p50 usage
+- Set resource limits based on p99 usage
+- Plan for 20-30% headroom
+
+### Step 6: Observability Design
+
+**Goal:** Ensure the system is observable from day one.
+
+**Thinking Framework:**
+- "How do we know if the system is healthy?"
+- "How do we debug issues?"
+- "How do we track business metrics?"
+
+**Observability Checklist:**
+- [ ] **Metrics:** Prometheus + Grafana (or CloudWatch)
+- [ ] **Logs:** Structured JSON, centralized aggregation
+- [ ] **Traces:** OpenTelemetry instrumentation
+- [ ] **Alerts:** SLO-based alerting (latency, error rate)
+- [ ] **Dashboards:** Golden signals (latency, traffic, errors, saturation)
+
+### Step 7: Cost Optimization
+
+**Goal:** Design for cost efficiency without sacrificing reliability.
+
+**Thinking Framework:**
+- "Are we right-sized for the workload?"
+- "Can we use spot/preemptible for this?"
+- "What can be turned off during low traffic?"
+
+**Cost Optimization Strategies:**
+1. Right-size resource requests
+2. Use Spot instances for fault-tolerant workloads
+3. Implement cluster autoscaler
+4. Schedule scale-down for dev/staging
+5. Use savings plans for predictable workloads
+
+### Step 8: IaC Structure
+
+**Goal:** Organize infrastructure code for maintainability.
+
+**Thinking Framework:**
+- "How will this evolve over time?"
+- "How do we manage multiple environments?"
+- "How do we prevent configuration drift?"
+
+**Recommended Structure:**
+```
+infrastructure/
+├── terraform/
+│   ├── modules/           # Reusable modules
+│   │   ├── eks-cluster/
+│   │   ├── networking/
+│   │   └── iam/
+│   ├── environments/      # Environment configs
+│   │   ├── dev/
+│   │   ├── staging/
+│   │   └── prod/
+│   └── global/            # Shared resources
+├── helm/
+│   └── charts/
+│       └── my-app/
+└── k8s/
+    └── base/              # Kustomize base
+```
+
+**GitOps Principles:**
+- All changes through Git
+- Automated sync (ArgoCD/Flux)
+- Drift detection and remediation
 
 ## Usage
 

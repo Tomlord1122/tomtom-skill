@@ -7,15 +7,143 @@ description: Code review expert for security, quality, and performance analysis.
 
 Expert assistant for comprehensive code review including security vulnerability detection, code quality assessment, performance analysis, and best practice recommendations.
 
-## How It Works
+## Thinking Process
 
-1. **Analyze Repository Context** - Scan existing codebase to understand established patterns
-2. Understands the purpose and scope of changes
-3. Checks for security vulnerabilities (highest priority)
-4. Evaluates code quality and maintainability
-5. **Validates consistency with repo standards** - Coding style, design patterns, architecture
-6. Identifies performance issues
-7. Provides actionable improvement suggestions
+When activated, follow this structured thinking approach to deliver thorough code reviews:
+
+### Step 1: Context Gathering (Understanding the Landscape)
+
+**Goal:** Build a complete mental model of the codebase before reviewing changes.
+
+**Key Questions to Ask:**
+- What is the project's architecture style? (Clean Architecture, MVC, Hexagonal, etc.)
+- What design patterns are already established? (Factory, Repository, DI, etc.)
+- What are the naming conventions? (camelCase, snake_case, file naming)
+- What testing patterns exist? (unit test structure, mocking style)
+
+**Actions:**
+1. Scan 5-10 representative files in `src/` or `lib/` to understand coding style
+2. Check for `README.md`, `CONTRIBUTING.md`, `.eslintrc`, `.prettierrc` for explicit rules
+3. Map the directory structure to understand layer boundaries
+4. Note any custom patterns unique to this codebase
+
+**Decision Point:** Only proceed to Step 2 after you can articulate:
+- "This repo uses [X] architecture with [Y] patterns"
+- "The coding style follows [Z] conventions"
+
+### Step 2: Scope Understanding (What and Why)
+
+**Goal:** Understand the intent and impact of the changes being reviewed.
+
+**Key Questions to Ask:**
+- What problem does this PR/code solve?
+- What are the explicit and implicit requirements?
+- What is the blast radius of these changes? (Which parts of the system are affected?)
+
+**Actions:**
+1. Read the PR description, commit messages, or related issue
+2. Identify all files changed and categorize them (new feature, bug fix, refactor)
+3. Trace the dependency graph of changed code
+4. Determine if changes cross layer boundaries
+
+**Decision Point:** You should be able to explain:
+- "This change implements [X] to solve [Y] problem"
+- "It affects [Z] components and may impact [W]"
+
+### Step 3: Security Review (CRITICAL - Must Pass)
+
+**Goal:** Identify any security vulnerabilities that could expose the system to attacks.
+
+**Thinking Framework:**
+- "If an attacker controlled this input, what could happen?"
+- "Is sensitive data being logged, exposed, or stored insecurely?"
+- "Are authentication and authorization properly enforced?"
+
+**Systematic Checks:**
+1. **Input Validation:** All user inputs sanitized and validated?
+2. **SQL/NoSQL Injection:** Parameterized queries used?
+3. **XSS:** User content escaped before rendering?
+4. **CSRF:** State-changing requests protected?
+5. **Secrets:** No hardcoded credentials or tokens?
+6. **Auth/Authz:** Proper access control at every endpoint?
+
+**Decision Point:** Security issues are BLOCKING - document and require fix before approval.
+
+### Step 4: Logic Correctness Review
+
+**Goal:** Verify the code does what it claims to do correctly.
+
+**Thinking Framework:**
+- "What happens at the boundaries?" (empty input, max values, null)
+- "What happens on failure?" (network error, timeout, exception)
+- "Is there any implicit state that could cause issues?"
+
+**Systematic Checks:**
+1. Trace the happy path - does it work as intended?
+2. Identify all edge cases - are they handled?
+3. Check error handling - are errors caught and handled appropriately?
+4. Verify async operations - are race conditions possible?
+
+### Step 5: Consistency Review (Repo Standards)
+
+**Goal:** Ensure new code integrates seamlessly with existing codebase.
+
+**Thinking Framework:**
+- "Would someone reading this code expect it to look like this based on the rest of the codebase?"
+- "Does this follow the established patterns or introduce new conventions?"
+
+**Systematic Checks:**
+1. **Naming:** Does it follow existing conventions?
+2. **Patterns:** Does it use established design patterns correctly?
+3. **Architecture:** Does it respect layer boundaries?
+4. **Error Handling:** Is it consistent with repo style?
+5. **Testing:** Does it follow existing test patterns?
+
+**Decision Point:** Inconsistencies should be flagged with:
+- "Existing pattern: [X]"
+- "This code does: [Y]"
+- "Suggestion: [How to align]"
+
+### Step 6: Quality & Maintainability Review
+
+**Goal:** Ensure code is readable, maintainable, and follows best practices.
+
+**Thinking Framework:**
+- "Will someone unfamiliar with this code understand it in 6 months?"
+- "Is this code easy to modify, extend, or delete?"
+
+**Systematic Checks:**
+1. Naming clarity and self-documentation
+2. Function length and complexity (< 50 lines, cyclomatic complexity < 10)
+3. DRY principle adherence
+4. Single Responsibility Principle
+5. Appropriate abstraction level
+
+### Step 7: Performance Review
+
+**Goal:** Identify potential performance bottlenecks.
+
+**Thinking Framework:**
+- "How does this scale with data size?"
+- "Are there unnecessary operations or allocations?"
+
+**Systematic Checks:**
+1. N+1 query problems
+2. Memory leak risks
+3. Unnecessary computations in loops
+4. Missing async/parallel opportunities
+5. Inefficient data structures
+
+### Step 8: Synthesize and Communicate
+
+**Goal:** Provide clear, actionable, and constructive feedback.
+
+**Output Structure:**
+1. Summarize repository context (so reviewee understands your perspective)
+2. List critical issues (MUST fix) with specific file:line references
+3. List important issues (SHOULD fix) with explanations and suggestions
+4. Note minor suggestions (NICE to have)
+5. Acknowledge good practices (positive reinforcement)
 
 ## Usage
 

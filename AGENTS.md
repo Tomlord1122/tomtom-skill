@@ -38,9 +38,9 @@ description: {One sentence describing when to use this skill. Include trigger ph
 
 {Brief description of what the skill does.}
 
-## How It Works
+## Thinking Process
 
-{Numbered list explaining the skill's workflow}
+{Structured thinking approach - see "Designing the Thinking Process" section below}
 
 ## Usage
 
@@ -65,6 +65,172 @@ bash /mnt/skills/user/{skill-name}/scripts/{script}.sh [args]
 ## Troubleshooting
 
 {Common issues and solutions, especially network/permissions errors}
+```
+
+## Designing the Thinking Process
+
+The **Thinking Process** section is the core of an effective skill. It provides a structured mental framework that guides the agent through problem-solving, ensuring consistent, high-quality outcomes.
+
+### Why Thinking Process Matters
+
+A simple numbered list like "1. Do X, 2. Do Y, 3. Do Z" is insufficient because:
+- It doesn't explain **why** each step matters
+- It doesn't help the agent **decide** between alternatives
+- It doesn't provide **context** for edge cases
+- It treats the agent as a mechanical executor rather than a thinking partner
+
+A well-designed Thinking Process transforms the agent into an expert by providing the mental models and decision frameworks that experts use.
+
+### Structure of a Thinking Process Step
+
+Each step should include these components:
+
+```markdown
+### Step N: {Step Name} ({Optional Context})
+
+**Goal:** {What this step aims to achieve - one sentence}
+
+**Key Questions to Ask:**
+- {Question that guides thinking}
+- {Question that uncovers requirements}
+- {Question that identifies constraints}
+
+**Thinking Framework:**
+- "{Mental model or heuristic}"
+- "{Decision criteria}"
+
+**Actions:**
+1. {Concrete action to take}
+2. {Another concrete action}
+
+**Decision Point:** {Criteria for moving to next step}
+- "{Articulation template: 'I understand that [X] because [Y]'}"
+```
+
+### Key Design Principles
+
+#### 1. Start with Context Gathering
+
+The first step should always establish understanding before action:
+- What is the current state?
+- What are the constraints?
+- What patterns already exist?
+
+**Example:**
+```markdown
+### Step 1: Context Discovery
+
+**Goal:** Understand the current state before proposing changes.
+
+**Key Questions to Ask:**
+- What is the existing architecture?
+- What are the team's conventions?
+- What are the pain points?
+
+**Decision Point:** Only proceed when you can articulate:
+- "The current system uses [X] with [Y] patterns"
+```
+
+#### 2. Use Decision Matrices for Pattern Selection
+
+When multiple approaches exist, provide a decision matrix:
+
+```markdown
+**Thinking Framework - Match Requirements to Patterns:**
+
+| Requirement | Recommended Pattern |
+|-------------|---------------------|
+| Simple CRUD | Standard layered architecture |
+| Complex domain | Clean Architecture |
+| Event-driven | CQRS with event sourcing |
+```
+
+#### 3. Include "Thinking Framework" Questions
+
+Frame decisions as questions the agent should ask itself:
+
+```markdown
+**Thinking Framework:**
+- "If an attacker controlled this input, what could happen?"
+- "What happens at the boundaries?" (empty, null, max values)
+- "How does this scale with data size?"
+```
+
+#### 4. Define Clear Decision Points
+
+Each step should have criteria for completion:
+
+```markdown
+**Decision Point:** You should be able to explain:
+- "This change implements [X] to solve [Y] problem"
+- "It affects [Z] components and may impact [W]"
+```
+
+#### 5. Provide Checklists for Systematic Coverage
+
+Use checklists for comprehensive review:
+
+```markdown
+**Security Checklist:**
+- [ ] Input validation on all user inputs
+- [ ] Parameterized queries (no SQL injection)
+- [ ] Output encoding (no XSS)
+- [ ] Authentication/authorization checks
+```
+
+#### 6. Include Anti-Patterns
+
+Show what NOT to do:
+
+```markdown
+**Anti-Patterns to Avoid:**
+```typescript
+// BAD: Exposes raw internals
+contextBridge.exposeInMainWorld('electron', { ipcRenderer });
+
+// GOOD: Explicit, limited API
+contextBridge.exposeInMainWorld('api', {
+  openFile: () => ipcRenderer.invoke('dialog:openFile')
+});
+```
+```
+
+### Recommended Number of Steps
+
+- **6-8 steps** is ideal for most skills
+- Each step should represent a distinct **phase of thinking**
+- Steps should flow logically from understanding → design → implementation → validation
+
+### Template: Thinking Process for a New Skill
+
+```markdown
+## Thinking Process
+
+When activated, follow this structured thinking approach:
+
+### Step 1: Context Discovery
+**Goal:** Understand the current state and constraints.
+{Questions, Actions, Decision Point}
+
+### Step 2: Requirements Analysis
+**Goal:** Clarify what needs to be accomplished.
+{Questions, Actions, Decision Point}
+
+### Step 3: Solution Design
+**Goal:** Choose the appropriate approach.
+{Decision Matrix, Thinking Framework}
+
+### Step 4: Implementation Strategy
+**Goal:** Plan the concrete steps.
+{Patterns, Checklists}
+
+### Step 5: Quality Assurance
+**Goal:** Ensure correctness and safety.
+{Validation Checks, Anti-patterns}
+
+### Step 6: Communication
+**Goal:** Present results clearly to the user.
+{Output Format, Templates}
 ```
 
 ### Best Practices for Context Efficiency

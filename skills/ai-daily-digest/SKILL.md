@@ -1,19 +1,20 @@
 ---
 name: ai-daily-digest
-description: "Fetches RSS feeds from 90 top Hacker News blogs (curated by Karpathy), then uses the AI agent to score, filter, summarize, and generate a daily digest in Markdown with translated titles (Traditional Chinese or English), category grouping, trend highlights, and visual statistics (Mermaid charts + tag cloud). No external API key required. Use when user mentions 'daily digest', 'RSS digest', 'blog digest', 'AI blogs', 'tech news summary', or asks to run /digest command. Trigger command: /digest."
+description: "Fetches RSS feeds from 90 top Hacker News blogs (curated by Karpathy), then uses the AI agent to score, filter, summarize, and generate a daily digest in Markdown with translated titles (Traditional Chinese or English), category grouping, trend highlights, and visual statistics (ASCII charts + tag cloud). No external API key required. Use when user mentions 'daily digest', 'RSS digest', 'blog digest', 'AI blogs', 'tech news summary', or asks to run /digest, /daily, or /news command. Trigger commands: /digest, /daily, /news."
 ---
 
 # AI Daily Digest
 
 Fetches the latest articles from 90 popular tech blogs recommended by Karpathy, then the Agent (you) will score them, filter by quality, and generate a curated daily digest with summaries and trend analysis.
 
-## Command
+## Commands
 
-### `/digest`
+You can trigger this skill using any of these commands:
+- `/digest` - Full command name
+- `/daily` - Short alias
+- `/news` - Alternative alias
 
-Run the daily digest generator.
-
-**Usage**: Type `/digest`, and follow the interactive guide to collect parameters, then the Agent will process everything.
+All commands work identically - run the daily digest generator with an interactive guide to collect parameters.
 
 ---
 
@@ -35,6 +36,8 @@ All scripts are in `scripts/` subdirectory.
 | Script | Purpose |
 |--------|---------|
 | `scripts/digest.ts` | Fetch-only script - RSS fetching + time filtering → JSON output |
+| `scripts/auto-digest.sh` | Automated execution wrapper for cron (no interaction needed) |
+| `scripts/setup-cron.sh` | Interactive cron job setup wizard |
 
 ---
 
@@ -57,6 +60,7 @@ Configuration file path: `~/.tomtom-daily-digest/config.json`
 ```
 
 Note: Language options are `zh-tw` (Traditional Chinese) or `en` (English) only.
+
 
 ---
 
@@ -333,23 +337,10 @@ ${top 3 articles with medals 🥇🥈🥉, each showing:
 | ${successFeeds}/${totalFeeds} | ${totalArticles} → ${filteredArticles} | ${hours}h | **${selected} 篇** |
 (or "**${selected} articles**" if language is en)
 
-### 分類分佈
-(or "### Category Distribution" if language is en)
-
-${Mermaid pie chart showing category distribution}
-
 ### 高頻關鍵詞
 (or "### Frequent Keywords" if language is en)
 
-${Mermaid bar chart showing top 12 keywords}
-
-<details>
-<summary>📈 純文字關鍵詞圖（終端機友善）</summary>
-(or "<summary>📈 Plain Text Keyword Chart (Terminal-Friendly)</summary>" if language is en)
-
 ${ASCII bar chart with █ and ░ characters}
-
-</details>
 
 ### 🏷️ 話題標籤
 (or "### 🏷️ Topic Tags" if language is en)
@@ -391,24 +382,6 @@ ${Repeat for all categories sorted by article count descending}
   - <7 days: "X days ago"
   - ≥7 days: ISO date (YYYY-MM-DD)
 
-**Mermaid Pie Chart** (category distribution):
-```mermaid
-pie showData
-    title "文章分類分佈" (or "Article Category Distribution" if en)
-    "🤖 AI / ML" : ${count}
-    "🔒 安全 / Security" : ${count}
-    ...
-```
-
-**Mermaid Bar Chart** (top 12 keywords):
-```mermaid
-xychart-beta horizontal
-    title "高頻關鍵詞" (or "Frequent Keywords" if en)
-    x-axis ["keyword1", "keyword2", ...]
-    y-axis "出現次數" 0 --> ${maxCount + 2} (or "Occurrences" if en)
-    bar [count1, count2, ...]
-```
-
 **ASCII Bar Chart** (top 10 keywords, terminal-friendly):
 ```
 keyword1  │ ████████████████████ 15
@@ -442,14 +415,34 @@ keyword2  │ ████████████░░░░░░░░ 12
   other       → 📝 Other
   ```
 
-### Step 9: Write Report to File
+### Step 9: Append to Heptabase Journal
 
-Save the Markdown report:
+Instead of writing to a file, append the digest to today's Heptabase journal entry.
 
+**Use Heptabase MCP tools to:**
+
+1. Get today's date in YYYY-MM-DD format
+2. Check if today's journal entry exists
+3. Append the markdown report to today's journal
+
+**Important notes:**
+- Use Heptabase MCP's journal append functionality
+- Add a separator before the digest content (e.g., `\n\n---\n\n`)
+- Include a timestamp header: `## 📰 Daily Digest - ${time}`
+- The full markdown report should be appended as-is
+
+**Example MCP usage pattern:**
+```
+# Pseudo-code for Heptabase MCP interaction
+today = getCurrentDate() # "2026-02-15"
+content = buildMarkdownReport()
+appendToJournal(today, "\n\n---\n\n" + content)
+```
+
+**Fallback**: If Heptabase MCP is unavailable, save to local file as backup:
 ```bash
 mkdir -p ./output
 OUTPUT_FILE="./output/digest-$(date +%Y%m%d).md"
-
 # Use Write tool to create the file
 Write($OUTPUT_FILE, <markdown content>)
 ```
@@ -476,10 +469,9 @@ Show a summary:
 
 For `zh-tw`:
 ```
-✅ 每日精選已成功生成！
+✅ 每日精選已成功生成並附加到 Heptabase journal！
 
-📁 報告：${outputPath}
-
+📅 日期：${today}
 📊 統計：
 • 掃描 ${successFeeds}/${totalFeeds} 個來源
 • 抓取 ${totalArticles} 篇文章
@@ -495,14 +487,15 @@ For `zh-tw`:
 
 3. ${titleTranslated3}
    ${summary3.slice(0, 80)}...
+
+💡 內容已附加到你今天的 Heptabase journal
 ```
 
 For `en`:
 ```
-✅ Daily digest generated successfully!
+✅ Daily digest generated and appended to Heptabase journal!
 
-📁 Report: ${outputPath}
-
+📅 Date: ${today}
 📊 Stats:
 • Scanned ${successFeeds}/${totalFeeds} sources
 • Fetched ${totalArticles} articles
@@ -518,6 +511,8 @@ For `en`:
 
 3. ${titleTranslated3}
    ${summary3.slice(0, 80)}...
+
+💡 Content has been appended to your Heptabase journal for today
 ```
 
 ---

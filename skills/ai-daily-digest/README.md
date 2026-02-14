@@ -2,7 +2,7 @@
 
 For details on how this skill was made, see ➡️ https://mp.weixin.qq.com/s/rkQ28KTZs5QeZqjwSCvR4Q
 
-Fetches the latest articles from 90 top Hacker News tech blogs recommended by [Andrej Karpathy](https://x.com/karpathy), then uses the OpenCode Agent (Claude) to score, filter, and generate a structured daily curated digest.
+Fetches the latest articles from 90 top Hacker News tech blogs recommended by [Andrej Karpathy](https://x.com/karpathy), then uses the OpenCode Agent (Claude) to score, filter, and generate a structured daily curated digest that's automatically appended to your Heptabase journal.
 
 ![AI Daily Digest Overview](assets/overview.png)
 
@@ -10,10 +10,14 @@ Fetches the latest articles from 90 top Hacker News tech blogs recommended by [A
 
 ## Usage
 
-Use as an OpenCode Skill — type `/digest` in the conversation to start the interactive guided flow:
+### Interactive Mode
+
+Use as an OpenCode Skill — type any of these commands in the conversation to start the interactive guided flow:
 
 ```
-/digest
+/digest   # Full command name
+/daily    # Short alias
+/news     # Alternative alias
 ```
 
 The Agent will ask for the following:
@@ -26,13 +30,14 @@ The Agent will ask for the following:
 
 Configuration is automatically saved to `~/.tomtom-daily-digest/config.json` and can be reused with one click on subsequent runs.
 
+
 ### Direct Command Line Usage
 
 ```bash
 npx -y bun scripts/digest.ts --hours 48 --output /tmp/articles.json
 ```
 
-This only fetches and filters articles. The Agent then handles scoring, summarization, and report generation.
+This only fetches and filters articles. The Agent then handles scoring, summarization, and appending to Heptabase journal.
 
 ## Features
 
@@ -40,7 +45,7 @@ This only fetches and filters articles. The Agent then handles scoring, summariz
 
 ```
 Phase 1 (Script): RSS Fetching → Time Filtering → JSON Output
-Phase 2 (Agent):  AI Scoring → Summarization → Trend Analysis → Markdown Report
+Phase 2 (Agent):  AI Scoring → Summarization → Trend Analysis → Heptabase Journal
 ```
 
 **Phase 1 - Fetch Script:**
@@ -52,7 +57,7 @@ Phase 2 (Agent):  AI Scoring → Summarization → Trend Analysis → Markdown R
 4. **AI Scoring** — Agent scores articles on three dimensions: relevance, quality, and timeliness (1-10), while performing classification and keyword extraction
 5. **AI Summarization** — Generates structured summaries (4-6 sentences) for the Top N articles, with translated titles (Traditional Chinese or English) and recommendation reasons
 6. **Trend Summary** — Agent identifies 2-3 macro trends in the tech world for the day
-7. **Markdown Report** — Builds complete digest with visualizations and categorized article lists
+7. **Heptabase Integration** — Appends the complete digest to your Heptabase journal for today
 
 ### Digest Structure
 
@@ -62,7 +67,7 @@ The generated Markdown file contains the following sections:
 |---------|---------|
 | 📝 Today's Highlights | 3-5 sentence macro trend summary |
 | 🏆 Today's Must-Read | Top 3 in-depth showcase: bilingual titles, summaries, recommendation reasons, keywords |
-| 📊 Data Overview | Statistics table + Mermaid pie chart (category distribution) + Mermaid bar chart (frequent keywords) + ASCII plain text chart + topic tag cloud |
+| 📊 Data Overview | Statistics table + ASCII bar chart (frequent keywords) + topic tag cloud |
 | Categorized Article List | Grouped by 6 categories, each article includes translated title, source, relative time, score, summary, keywords |
 
 ### Six-Category System
@@ -81,7 +86,7 @@ The generated Markdown file contains the following sections:
 - **Zero External Dependencies** — No Gemini API or other external API keys needed; the Agent handles all AI processing using its own intelligence
 - **Bilingual Support** — Traditional Chinese (繁體中文) or English summaries and titles
 - **Structured Summaries** — Not just a one-liner, but 4-6 sentences covering core problem → key arguments → conclusions, enabling a 30-second assessment of whether an article is worth reading
-- **Visual Statistics** — Mermaid charts (native rendering on GitHub/Obsidian) + ASCII bar charts (terminal-friendly) + tag cloud, covering all reading scenarios with three visualization methods
+- **Visual Statistics** — ASCII bar charts (terminal-friendly) + tag cloud for all reading scenarios
 - **Smart Classification** — AI automatically categorizes articles into 6 categories; browsing by category is far more efficient than a flat list
 - **Trend Insights** — Not just an article list, but also identifies macro trends in the tech world for the day, helping you see the big picture
 - **Configuration Memory** — Preference parameters are automatically persisted to `~/.tomtom-daily-digest/config.json`; daily use is a one-click operation
@@ -146,13 +151,13 @@ The complete list is embedded in `scripts/digest.ts`.
 │ • Selects top N by score                            │
 │ • Generates summaries + translations                │
 │ • Identifies macro trends                           │
-│ • Builds Markdown report with visualizations        │
+│ • Appends digest to Heptabase journal               │
 └────────────────┬────────────────────────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────────────────────────┐
 │ Output                                              │
-│ • Saves to ./output/digest-YYYYMMDD.md              │
+│ • Appends to Heptabase journal (today's date)       │
 │ • Saves config to ~/.tomtom-daily-digest/config.json│
 │ • Shows preview of top 3 articles to user           │
 └─────────────────────────────────────────────────────┘

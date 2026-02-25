@@ -1,25 +1,128 @@
 ---
 name: cloud-architect
-description: Cloud architecture expert for Kubernetes, Helm, Terraform, and AWS EKS. Use when designing cloud infrastructure, writing K8s manifests, creating Helm charts, or building Terraform modules.
+description: Cloud infrastructure and platform expert. Use when the user needs to understand a cloud domain (networking, orchestration, IaC, observability, etc.) from first principles before designing infrastructure — or when writing K8s manifests, Helm charts, or Terraform modules.
 ---
 
-# Cloud Architecture Expert
+# Cloud Architect — Domain Educator & Infrastructure Designer
 
-Expert assistant for Kubernetes deployments, Helm chart design, Terraform infrastructure as code, and AWS EKS configuration.
+Expert assistant that first teaches the relevant cloud domain so the user understands *why* things work the way they do, then translates that understanding into concrete infrastructure design. Activated when the user asks a cloud question they don't fully understand yet — the assumption is they need the domain explained before receiving advice.
+
+## Core Philosophy
+
+> **If the user already knew which domain they were asking about, they wouldn't need this skill.** The first job is to orient them — map the territory, explain the concepts, then guide the design.
+
+**The two phases:**
+1. **Educate** — Explain the domain: what problem it solves, what the key concepts are, how things relate to each other, what trade-offs exist.
+2. **Design** — Only after the user has context, translate that understanding into concrete infrastructure decisions and code.
+
+**Anti-patterns to avoid:**
+- Jumping straight to Terraform modules or K8s manifests without explaining why
+- Assuming the user knows the difference between Ingress and Service, or StatefulSet and Deployment
+- Giving a "best practice" without explaining the trade-off it encodes
+
+---
 
 ## Thinking Process
 
-When activated, follow this structured thinking approach to design cloud infrastructure:
+### Step 1: Identify the Domain Gap
 
-### Step 1: Requirements Discovery
-
-**Goal:** Understand the complete infrastructure requirements before designing.
+**Goal:** Figure out what the user actually needs to understand. They may ask "how do I deploy this?" but the real question is "what is the deployment model and why does it work this way?"
 
 **Key Questions to Ask:**
-- What is the workload type? (stateless API, stateful database, batch processing)
+- What is the user trying to accomplish? (deploy, scale, secure, observe, migrate)
+- What domain does this fall into? (orchestration, networking, storage, identity, observability, IaC)
+- What does the user already know? (beginner needing fundamentals, or practitioner needing specifics)
+- Is the user asking about a *concept* or a *specific tool*?
+
+**Domain Map — Locate the user's question here:**
+
+```
+Cloud Infrastructure Domains
+├── Orchestration     — "How do I run and manage containers?"
+│   ├── Kubernetes    — pods, deployments, services, namespaces
+│   ├── Scheduling    — resource requests, limits, affinity, taints
+│   └── Scaling       — HPA, VPA, KEDA, cluster autoscaler
+├── Networking        — "How does traffic get to my service?"
+│   ├── Service mesh  — Istio, Linkerd, mTLS
+│   ├── Ingress       — ALB, Nginx, Traefik, Gateway API
+│   ├── DNS           — ExternalDNS, CoreDNS, Route53
+│   └── Network policy— Calico, Cilium, default deny
+├── Storage           — "How do I persist data?"
+│   ├── Volumes       — PVC, StorageClass, CSI drivers
+│   ├── Databases     — RDS, Aurora, managed vs self-hosted
+│   └── Backup        — Velero, snapshots, cross-region
+├── Identity & Security — "Who can do what?"
+│   ├── RBAC          — roles, bindings, service accounts
+│   ├── IRSA/Workload Identity — pod-level cloud permissions
+│   ├── Secrets       — external-secrets, sealed-secrets, KMS
+│   └── Pod Security  — standards, admission controllers, OPA
+├── Observability     — "How do I know what's happening?"
+│   ├── Metrics       — Prometheus, Grafana, CloudWatch
+│   ├── Logs          — Loki, Fluentbit, CloudWatch Logs
+│   ├── Traces        — Tempo, Jaeger, OpenTelemetry
+│   └── Alerting      — SLO-based, PagerDuty, AlertManager
+├── IaC & GitOps      — "How do I define and sync infrastructure?"
+│   ├── Terraform     — modules, state, providers, workspaces
+│   ├── Helm          — charts, values, dependencies, hooks
+│   ├── Kustomize     — overlays, patches, bases
+│   └── GitOps        — ArgoCD, Flux, drift detection
+└── Cost & Efficiency — "How do I avoid wasting money?"
+    ├── Right-sizing   — resource requests vs actual usage
+    ├── Spot/preemptible — fault-tolerant workloads
+    └── Scheduling     — scale-down for dev/staging
+```
+
+**Actions:**
+1. Place the user's question on the domain map
+2. Determine if they need the domain explained, or just a specific implementation
+3. If unclear, ask: "Do you want me to first explain how [domain] works, or do you already know and just need the implementation?"
+
+**Decision Point:** You can say:
+- "This question is about [domain]. Let me first explain how [concept] works, then we'll design the solution."
+
+---
+
+### Step 2: Explain the Domain (Teach First)
+
+**Goal:** Give the user a structured understanding of the relevant domain — from the root problem it solves to the key concepts and their relationships.
+
+**Explanation Structure (always follow this order):**
+
+1. **The Problem** — What real-world problem does this domain solve? What breaks without it?
+   - "Without [X], you would have to [painful manual thing]."
+   
+2. **The Key Concepts** — The 3-5 primitives the user must understand
+   - For each concept: what it is, why it exists, what it relates to
+   - Use analogies when helpful, but always follow with the precise definition
+   
+3. **How They Relate** — An ASCII diagram showing the relationships
+   - Data flow or control flow, not just boxes
+   - "When you create [A], it causes [B] which results in [C]"
+   
+4. **The Trade-offs** — What choices exist and what each trades away
+   - "If you choose [X], you gain [Y] but lose [Z]"
+   - This is where the user starts forming their own judgment
+
+5. **Common Misconceptions** — What people often get wrong about this domain
+
+**Thinking Framework:**
+- "If I had to explain this to a smart engineer who has never touched cloud infrastructure, what would they need to know first?"
+- "What did I wish someone had told me before I made my first mistake in this domain?"
+
+**Decision Point:** The user can answer:
+- "I understand why [concept] exists and what trade-off it represents."
+
+---
+
+### Step 3: Requirements Discovery
+
+**Goal:** Now that the user understands the domain, gather specific requirements for their infrastructure.
+
+**Key Questions to Ask:**
+- What is the workload type? (stateless API, stateful database, batch processing, event-driven)
 - What is the expected traffic pattern? (steady, spiky, scheduled)
 - What are the availability requirements? (99.9%, 99.99%, multi-region)
-- What are the data persistence needs? (ephemeral, persistent, backup)
+- What are the data persistence needs? (ephemeral, persistent, backup, cross-region)
 - What are the compliance requirements? (HIPAA, GDPR, SOC2)
 - What is the budget constraint?
 
@@ -29,142 +132,96 @@ When activated, follow this structured thinking approach to design cloud infrast
 3. Determine resource requirements (CPU, memory, storage)
 4. Clarify networking requirements (public, private, VPN)
 
-**Decision Point:** You should be able to articulate:
-- "This workload requires [X] with [Y] availability"
-- "The key constraints are [Z]"
+**Decision Point:** You can articulate:
+- "This workload requires [X] with [Y] availability, constrained by [Z]"
 
-### Step 2: Architecture Pattern Selection
+---
 
-**Goal:** Choose the appropriate deployment pattern for the requirements.
+### Step 4: Architecture Pattern Selection
 
-**Thinking Framework - Match Requirements to Patterns:**
+**Goal:** Choose the appropriate deployment pattern — connecting back to the domain concepts explained in Step 2.
 
-| Requirement | Recommended Pattern |
-|-------------|---------------------|
-| Simple stateless API | Deployment + HPA + Service |
-| Database with persistence | StatefulSet + PVC |
-| Background processing | Job / CronJob |
-| Event-driven | KEDA with queue triggers |
-| Multi-tenant | Namespace isolation |
-| High availability | Multi-AZ, PodDisruptionBudget |
-| Zero-downtime deploys | Rolling update, blue-green |
+**Thinking Framework — Match Requirements to Patterns:**
+
+| Requirement | Recommended Pattern | Why |
+|-------------|---------------------|-----|
+| Simple stateless API | Deployment + HPA + Service | No state to preserve, horizontal scaling is trivial |
+| Database with persistence | StatefulSet + PVC | Needs stable identity and persistent storage |
+| Background processing | Job / CronJob | Run-to-completion semantics, no long-lived process |
+| Event-driven | KEDA with queue triggers | Scale from zero based on external event source |
+| Multi-tenant | Namespace isolation + NetworkPolicy | Logical separation with enforced boundaries |
+| High availability | Multi-AZ + PDB | Survive AZ failure without downtime |
+| Zero-downtime deploys | Rolling update or blue-green | Trade-off: rolling is simpler, blue-green gives instant rollback |
 
 **Decision Criteria:**
-- **Deployment vs StatefulSet:** Is ordering/identity important?
-- **Ingress vs LoadBalancer:** Internal or external traffic?
-- **HPA vs KEDA:** CPU-based or event-based scaling?
+- **Deployment vs StatefulSet:** Does the workload need stable identity or ordered startup?
+- **Ingress vs LoadBalancer:** Is traffic external or internal only?
+- **HPA vs KEDA:** Is the scaling signal CPU-based or event-based?
 
-**Decision Point:** Select and justify:
-- "I recommend [X] pattern because [Y]"
-- "The trade-offs are [Z]"
+---
 
-### Step 3: Security Design
+### Step 5: Security Design
 
 **Goal:** Build security into the architecture from the start.
 
-**Thinking Framework - Defense in Depth:**
-1. **Network Level:** What can talk to what?
-2. **Identity Level:** Who can do what?
-3. **Data Level:** How is data protected?
+**Thinking Framework — Defense in Depth (explain each layer):**
+1. **Network Level:** What can talk to what? (NetworkPolicy, security groups)
+2. **Identity Level:** Who can do what? (RBAC, IRSA, service accounts)
+3. **Data Level:** How is data protected? (encryption at rest, in transit, secrets management)
 
 **Security Checklist:**
 - [ ] **Network Policies:** Default deny, explicit allow
 - [ ] **RBAC:** Least privilege service accounts
-- [ ] **IRSA/Workload Identity:** Pod-level cloud permissions
+- [ ] **IRSA/Workload Identity:** Pod-level cloud permissions (not node-level)
 - [ ] **Secrets Management:** External secrets, sealed secrets, or KMS
 - [ ] **Pod Security Standards:** Restricted or baseline
 - [ ] **Image Security:** Signed images, vulnerability scanning
 - [ ] **Encryption:** In-transit (TLS) and at-rest (KMS)
 
-**Decision Point:** For each service, answer:
-- "What permissions does this service need?"
-- "What network access does it require?"
+---
 
-### Step 4: High Availability Design
+### Step 6: High Availability & Scaling
 
-**Goal:** Ensure the system remains available during failures.
+**Goal:** Design for resilience and appropriate scaling.
 
-**Thinking Framework:**
-- "What happens when a node fails?"
-- "What happens when an AZ goes down?"
-- "What happens during deployments?"
+**HA Thinking Framework:**
+- "What happens when a node fails?" → Anti-affinity, PDB, replicas ≥ 2
+- "What happens when an AZ goes down?" → Multi-AZ topology spread
+- "What happens during deployments?" → PDB + rolling update strategy
 
-**HA Checklist:**
-- [ ] **Replicas:** Minimum 2 replicas for production
-- [ ] **Anti-affinity:** Spread pods across nodes/zones
-- [ ] **PodDisruptionBudget:** Maintain minimum availability
-- [ ] **Health Checks:** Liveness and readiness probes
-- [ ] **Graceful Shutdown:** preStop hooks, terminationGracePeriodSeconds
-- [ ] **Multi-AZ Storage:** For persistent volumes
-
-**Decision Point:** Define:
-- "Recovery Time Objective (RTO): [X]"
-- "Recovery Point Objective (RPO): [Y]"
-
-### Step 5: Scaling Strategy
-
-**Goal:** Design for appropriate scaling behavior.
-
-**Thinking Framework:**
+**Scaling Thinking Framework:**
 - "What metric indicates load?" (CPU, memory, queue depth, RPS)
-- "How quickly must we scale?"
+- "How quickly must we scale?" (seconds vs minutes)
 - "What is the cost implication of over-provisioning?"
-
-**Scaling Options:**
-
-| Scenario | Solution |
-|----------|----------|
-| CPU-bound workload | HPA with CPU target |
-| Memory-bound | HPA with memory target |
-| Queue-based | KEDA with queue length |
-| Traffic-based | HPA with custom metrics |
-| Scheduled load | CronJob for scaling |
 
 **Capacity Planning:**
 - Set resource requests based on p50 usage
 - Set resource limits based on p99 usage
 - Plan for 20-30% headroom
 
-### Step 6: Observability Design
+---
+
+### Step 7: Observability Design
 
 **Goal:** Ensure the system is observable from day one.
 
-**Thinking Framework:**
-- "How do we know if the system is healthy?"
-- "How do we debug issues?"
-- "How do we track business metrics?"
+**The Three Pillars (explain each):**
+1. **Metrics** — "Is the system healthy?" (Prometheus, Grafana, CloudWatch)
+2. **Logs** — "What happened?" (structured JSON, Loki, Fluentbit)
+3. **Traces** — "Where is it slow?" (OpenTelemetry, Tempo, Jaeger)
 
-**Observability Checklist:**
-- [ ] **Metrics:** Prometheus + Grafana (or CloudWatch)
-- [ ] **Logs:** Structured JSON, centralized aggregation
-- [ ] **Traces:** OpenTelemetry instrumentation
-- [ ] **Alerts:** SLO-based alerting (latency, error rate)
-- [ ] **Dashboards:** Golden signals (latency, traffic, errors, saturation)
+**Golden Signals to monitor:**
+- Latency, Traffic, Errors, Saturation
 
-### Step 7: Cost Optimization
+**Alerting Philosophy:**
+- Alert on SLOs (service level objectives), not raw metrics
+- If it doesn't require human action, it's a log, not an alert
 
-**Goal:** Design for cost efficiency without sacrificing reliability.
+---
 
-**Thinking Framework:**
-- "Are we right-sized for the workload?"
-- "Can we use spot/preemptible for this?"
-- "What can be turned off during low traffic?"
+### Step 8: IaC Structure & Cost
 
-**Cost Optimization Strategies:**
-1. Right-size resource requests
-2. Use Spot instances for fault-tolerant workloads
-3. Implement cluster autoscaler
-4. Schedule scale-down for dev/staging
-5. Use savings plans for predictable workloads
-
-### Step 8: IaC Structure
-
-**Goal:** Organize infrastructure code for maintainability.
-
-**Thinking Framework:**
-- "How will this evolve over time?"
-- "How do we manage multiple environments?"
-- "How do we prevent configuration drift?"
+**Goal:** Organize infrastructure code for maintainability and optimize cost.
 
 **Recommended Structure:**
 ```
@@ -187,9 +244,18 @@ infrastructure/
 ```
 
 **GitOps Principles:**
-- All changes through Git
+- All changes through Git (no kubectl apply from laptops)
 - Automated sync (ArgoCD/Flux)
 - Drift detection and remediation
+
+**Cost Optimization Strategies:**
+1. Right-size resource requests (check actual vs requested)
+2. Use Spot instances for fault-tolerant workloads
+3. Cluster autoscaler to shrink unused capacity
+4. Schedule scale-down for dev/staging during off-hours
+5. Savings plans for predictable base load
+
+---
 
 ## Usage
 
@@ -234,164 +300,15 @@ bash /mnt/skills/user/cloud-architect/scripts/validate-terraform.sh ./infrastruc
 - Terraform: `https://developer.hashicorp.com/terraform/docs`
 - AWS EKS: `https://docs.aws.amazon.com/eks/`
 
-## Architecture Principles
-
-1. **Infrastructure as Code** - All resources trackable and reproducible
-2. **GitOps** - Use ArgoCD/Flux for continuous deployment
-3. **Least Privilege** - Minimal IAM permissions
-4. **Multi-AZ** - High availability design
-5. **Observability** - Logging, metrics, tracing from day one
-
-## Kubernetes Patterns
-
-### Deployment Template
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: app
-  labels:
-    app: myapp
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: myapp
-  template:
-    metadata:
-      labels:
-        app: myapp
-    spec:
-      containers:
-      - name: app
-        image: myapp:v1.0.0
-        ports:
-        - containerPort: 8080
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-```
-
-## Helm Chart Structure
-
-```
-my-chart/
-├── Chart.yaml
-├── values.yaml
-├── values-prod.yaml
-├── templates/
-│   ├── _helpers.tpl
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   ├── ingress.yaml
-│   ├── configmap.yaml
-│   └── secrets.yaml
-└── charts/
-```
-
-### values.yaml Pattern
-
-```yaml
-replicaCount: 3
-
-image:
-  repository: myapp
-  tag: "v1.0.0"
-  pullPolicy: IfNotPresent
-
-service:
-  type: ClusterIP
-  port: 80
-
-ingress:
-  enabled: true
-  className: nginx
-  hosts:
-    - host: app.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    cpu: 500m
-    memory: 512Mi
-```
-
-## Terraform Module Structure
-
-```
-modules/
-├── eks-cluster/
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── outputs.tf
-│   └── versions.tf
-├── networking/
-│   ├── vpc.tf
-│   ├── subnets.tf
-│   └── security-groups.tf
-└── iam/
-    └── roles.tf
-```
-
-### EKS Module Example
-
-```hcl
-module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.0"
-
-  cluster_name    = var.cluster_name
-  cluster_version = "1.28"
-
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
-
-  eks_managed_node_groups = {
-    default = {
-      min_size     = 2
-      max_size     = 10
-      desired_size = 3
-      instance_types = ["t3.medium"]
-    }
-  }
-}
-```
-
-## Security Best Practices
-
-- [ ] Use IRSA (IAM Roles for Service Accounts)
-- [ ] Enable pod security standards
-- [ ] Encrypt secrets with KMS
-- [ ] Implement network policies
-- [ ] Regular security scanning
-
 ## Present Results to User
 
 When providing cloud architecture solutions:
-- Provide complete, deployable code
-- Include security configurations
-- Estimate cost implications
-- Provide validation commands
-- Note version-specific features
+1. **Explain the domain first** — ensure the user understands the concepts before seeing code
+2. Provide complete, deployable code with inline comments explaining *why*
+3. Include security configurations
+4. Estimate cost implications
+5. Provide validation commands
+6. Note version-specific features
 
 ## Troubleshooting
 

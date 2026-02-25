@@ -1,191 +1,308 @@
 ---
 name: golang-architect
-description: Golang backend architecture expert. Use when designing Go services with Gin, implementing layered architecture, configuring sqlc with PostgreSQL/Supabase, or building API authentication.
+description: Software Architect specializing in Go projects. Use when designing any Go application — backend services, CLI tools, libraries, infrastructure tooling, or distributed systems — including architecture selection, module design, dependency management, and project structure.
 ---
 
-# Golang Backend Architecture Expert
+# Go Software Architect
 
-Expert assistant for Golang backend architecture with Gin Server, Layered Architecture, sqlc, PostgreSQL (Supabase), and API authentication.
+Software Architect who works in Go. Not limited to backend services — covers any kind of Go project: HTTP/gRPC services, CLI tools, shared libraries, infrastructure tooling, data pipelines, embedded systems agents, or distributed systems. The focus is on making sound architectural decisions in Go's idiom.
+
+## Core Philosophy
+
+> **Architecture is about trade-offs, not best practices. Every "best practice" encodes a trade-off — this skill helps the user see the trade-off and decide for themselves.**
+
+**Principles:**
+- Go favors simplicity. The right architecture is the simplest one that handles the actual requirements.
+- Start with the problem, not the pattern. Don't apply Clean Architecture to a 200-line CLI tool.
+- Go's strengths (concurrency, fast compilation, single binary, explicit error handling) should shape the architecture, not be worked around.
+- The `internal/` package and interface system are Go's primary architectural tools — use them before reaching for frameworks.
+
+---
 
 ## Thinking Process
 
-When activated, follow this structured thinking approach to design Go backend architectures:
+### Step 1: Understand the Project (What Are We Building?)
 
-### Step 1: Requirements Analysis
-
-**Goal:** Fully understand what the service needs to accomplish.
+**Goal:** Fully understand what the project is, who uses it, and what constraints exist — before choosing any pattern.
 
 **Key Questions to Ask:**
-- What is the core business domain? (e-commerce, messaging, analytics, etc.)
-- What are the API requirements? (REST, GraphQL, gRPC)
-- What is the expected scale? (requests/sec, data volume, user count)
-- What are the integration points? (databases, external APIs, message queues)
-- What are the security requirements? (authentication, authorization, data sensitivity)
+- What kind of Go project is this?
+  - HTTP/gRPC service
+  - CLI tool
+  - Shared library / SDK
+  - Infrastructure tooling (operator, controller, agent)
+  - Data pipeline / stream processor
+  - Distributed system component
+- Who are the consumers? (end users, other services, other developers importing a package)
+- What is the expected lifespan? (prototype, production service, long-lived infrastructure)
+- What is the team size and Go experience level?
+- What are the hard constraints? (latency budget, memory limit, deployment environment, compliance)
 
 **Actions:**
-1. List all endpoints/operations the service must support
-2. Identify the data entities and their relationships
-3. Map external dependencies and integrations
-4. Clarify non-functional requirements (latency, availability, consistency)
+1. Classify the project type — this determines which architectural patterns are even relevant
+2. Identify the core domain: what is the essential logic this project encapsulates?
+3. Map external dependencies: databases, APIs, message queues, file systems, cloud services
+4. Clarify non-functional requirements: latency, throughput, availability, binary size
 
-**Decision Point:** You should be able to articulate:
-- "This service handles [X] domain with [Y] main entities"
-- "It needs to integrate with [Z] and handle [W] requests/sec"
+**Decision Point:** You can articulate:
+- "This is a [type] project that [does X] for [audience], constrained by [Y]"
 
-### Step 2: Architecture Selection
+---
 
-**Goal:** Choose the appropriate architectural pattern for the requirements.
+### Step 2: Architecture Selection (What Pattern Fits?)
 
-**Thinking Framework:**
+**Goal:** Choose the right architecture for the project type and complexity. Over-engineering is as bad as under-engineering.
 
-| Requirement | Recommended Architecture |
-|-------------|--------------------------|
-| Simple CRUD API | Standard Layered (Handler → Service → Repository) |
-| Complex business logic | Clean Architecture / Hexagonal |
-| Event-driven processing | CQRS with event sourcing |
-| Microservices | Domain-Driven Design boundaries |
-| High-performance | Minimal layers, direct data access |
+**Thinking Framework — Match Project to Architecture:**
 
-**Decision Criteria:**
-- **Layered Architecture:** When business logic is straightforward, team is familiar with Go
-- **Clean Architecture:** When testability is critical, business rules change frequently
-- **Hexagonal:** When multiple input/output adapters are needed (HTTP, gRPC, CLI)
+| Project Type | Complexity | Recommended Architecture |
+|---|---|---|
+| Simple CLI tool | Low | Single `main.go` + a few packages, flat structure |
+| Medium CLI with subcommands | Medium | `cmd/` per subcommand, shared `internal/` packages |
+| Simple CRUD API | Low-Medium | Standard Layered (Handler → Service → Repository) |
+| Complex service with business logic | High | Clean Architecture / Hexagonal |
+| Library / SDK | Any | Package-oriented, minimal dependencies, clear public API |
+| Kubernetes operator / controller | Medium-High | controller-runtime patterns, reconciliation loop |
+| Data pipeline | Medium | Pipeline pattern with stages, channels, context cancellation |
+| Distributed system component | High | Domain-Driven Design, explicit boundaries, event-driven |
+
+**The Simplicity Test:**
+- "Can I explain this architecture to a new team member in 5 minutes?"
+- "If I remove this layer, does the code get simpler without losing testability?"
+- "Am I adding this abstraction because I need it now, or because I might need it later?"
+
+**Anti-patterns:**
+- Applying Clean Architecture to a CLI tool (over-engineering)
+- No separation at all in a service with 50+ endpoints (under-engineering)
+- Creating interfaces before you have two implementations (premature abstraction)
+- Using a framework when the standard library suffices
 
 **Decision Point:** Select and justify:
-- "I recommend [X] architecture because [Y reasons]"
-- "The trade-offs are [Z]"
+- "I recommend [X] architecture because [project characteristics]"
+- "I specifically avoid [Y] because [it would over-engineer / under-serve the requirements]"
 
-### Step 3: Layer Design
+---
 
-**Goal:** Define clear boundaries and responsibilities for each layer.
+### Step 3: Module & Package Design
 
-**Thinking Framework - Apply Dependency Rule:**
+**Goal:** Design the Go module structure — the most important architectural decision in any Go project.
+
+**Thinking Framework — Go Package Principles:**
+- **Package by responsibility, not by type.** `user/` not `models/`, `handlers/`, `services/`.
+- **`internal/` is your architectural boundary.** Code in `internal/` cannot be imported by external consumers.
+- **Accept interfaces, return structs.** Define interfaces where they are used, not where they are implemented.
+- **Keep `main.go` thin.** It wires things together (dependency injection); it contains no logic.
+
+**Project Structure Templates:**
+
+**Simple CLI:**
+```
+mytool/
+├── main.go              # Entry point + flag parsing
+├── run.go               # Core logic
+├── config.go            # Configuration
+└── go.mod
+```
+
+**Medium Service:**
+```
+myservice/
+├── cmd/
+│   └── server/
+│       └── main.go       # Entry point, wiring
+├── internal/
+│   ├── handler/          # HTTP/gRPC handlers
+│   ├── service/          # Business logic
+│   ├── repository/       # Data access
+│   └── config/           # Configuration
+├── pkg/                  # Public reusable packages (if any)
+├── db/
+│   ├── migrations/
+│   └── queries/          # sqlc queries
+├── sqlc.yaml
+└── go.mod
+```
+
+**Library / SDK:**
+```
+mylib/
+├── mylib.go             # Public API (keep small and stable)
+├── option.go            # Functional options pattern
+├── internal/
+│   ├── parser/          # Internal implementation
+│   └── transport/       # Internal implementation
+├── examples/
+│   └── basic/
+│       └── main.go
+└── go.mod
+```
+
+**Operator / Controller:**
+```
+myoperator/
+├── cmd/
+│   └── controller/
+│       └── main.go
+├── api/
+│   └── v1/
+│       └── types.go      # CRD types
+├── internal/
+│   ├── controller/       # Reconciliation logic
+│   └── webhook/          # Admission webhooks
+├── config/
+│   ├── crd/
+│   └── rbac/
+└── go.mod
+```
+
+**Decision Point:** The user can answer:
+- "I know where to put [X] code and why it belongs there"
+
+---
+
+### Step 4: Dependency & Interface Design
+
+**Goal:** Design the dependency graph so the system is testable, composable, and changeable.
+
+**Thinking Framework — The Dependency Rule:**
 - Inner layers should NOT know about outer layers
-- Dependencies point INWARD (Repository ← Service ← Handler)
-- Interfaces are defined by the layer that USES them
+- Dependencies point INWARD
+- Interfaces are defined by the layer that USES them (not the layer that implements them)
 
-**Standard Layer Responsibilities:**
-
-1. **Handler Layer (HTTP/gRPC)**
-   - Parse and validate requests
-   - Call service layer
-   - Format and return responses
-   - Handle HTTP-specific errors (status codes)
-
-2. **Service Layer (Business Logic)**
-   - Orchestrate business operations
-   - Apply business rules and validations
-   - Coordinate between repositories
-   - Transaction management
-
-3. **Repository Layer (Data Access)**
-   - Database queries (sqlc generated)
-   - External API calls
-   - Cache operations
-   - Data mapping
-
-4. **Domain Layer (Optional - for complex domains)**
-   - Entity definitions
-   - Value objects
-   - Domain events
-
-**Interface Design Questions:**
-- "What methods does the service layer need from the repository?"
-- "How can I make this testable with mocks?"
-
-### Step 4: Database and Query Design
-
-**Goal:** Design efficient data access with sqlc.
-
-**Thinking Framework:**
-- "What queries will the service need?"
-- "How can I minimize N+1 problems?"
-- "Should this be a transaction?"
-
-**sqlc Design Checklist:**
-1. Define schema migrations first
-2. Write queries based on service layer needs
-3. Use batch queries to avoid N+1
-4. Consider read replicas for read-heavy operations
-5. Plan for pagination from the start
-
-**Decision Point:** For each entity:
-- "What are the CRUD operations needed?"
-- "What are the common query patterns?"
-- "Where do I need transactions?"
-
-### Step 5: Error Handling Strategy
-
-**Goal:** Design consistent, informative error handling.
-
-**Thinking Framework:**
-- "What types of errors can occur?" (validation, not found, conflict, internal)
-- "How should errors propagate between layers?"
-- "What information should the client receive?"
-
-**Error Hierarchy:**
-```
-Handler Layer: HTTP status codes + user-friendly messages
-     ↑ transforms
-Service Layer: Domain-specific errors (NotFound, Conflict, Validation)
-     ↑ wraps
-Repository Layer: Infrastructure errors (DB connection, timeout)
-```
-
-### Step 6: Security Design
-
-**Goal:** Ensure the service is secure by default.
-
-**Security Checklist:**
-- [ ] Authentication: JWT validation, session management
-- [ ] Authorization: Role-based or attribute-based access control
-- [ ] Input validation: All inputs sanitized at handler layer
-- [ ] SQL injection: Parameterized queries via sqlc
-- [ ] Secrets management: Environment variables, not code
-- [ ] Rate limiting: Protect against abuse
-- [ ] CORS: Configure for frontend origins
-
-### Step 7: Testing Strategy
-
-**Goal:** Design for testability from the start.
-
-**Testing Layers:**
-- **Unit tests:** Service layer with mocked repositories
-- **Integration tests:** Repository layer with test database
-- **E2E tests:** Handler layer with test server
-
-**Dependency Injection Pattern:**
+**Go Interface Guidelines:**
 ```go
-// Define interface in service layer
-type UserRepository interface {
+// GOOD: Interface defined where it's used (service layer)
+// service/user.go
+type UserStore interface {
     GetByID(ctx context.Context, id string) (*User, error)
 }
 
-// Service accepts interface
 type UserService struct {
-    repo UserRepository
+    store UserStore  // depends on interface, not implementation
 }
 
-// Easy to mock in tests
+// BAD: Interface defined where it's implemented (too broad, premature)
+// repository/user.go
+type UserRepository interface {
+    GetByID(ctx context.Context, id string) (*User, error)
+    GetByEmail(ctx context.Context, email string) (*User, error)
+    Create(ctx context.Context, u *User) error
+    Update(ctx context.Context, u *User) error
+    Delete(ctx context.Context, id string) error
+    List(ctx context.Context, offset, limit int) ([]*User, error)
+}
 ```
+
+**Dependency Injection in Go (no framework needed):**
+```go
+// main.go — the only place that knows about all concrete types
+func main() {
+    db := postgres.Connect(cfg.DatabaseURL)
+    repo := repository.NewUserRepo(db)
+    svc := service.NewUserService(repo)
+    handler := handler.NewUserHandler(svc)
+    
+    router := http.NewServeMux()
+    handler.RegisterRoutes(router)
+    http.ListenAndServe(":8080", router)
+}
+```
+
+---
+
+### Step 5: Error Handling Strategy
+
+**Goal:** Design consistent, informative error handling across layers.
+
+**Thinking Framework:**
+- "What types of errors can occur?" (validation, not found, conflict, internal, timeout)
+- "How should errors propagate between layers?"
+- "What information should the caller receive vs what should be logged?"
+
+**Error Propagation Model:**
+```
+External interface (HTTP/gRPC/CLI): User-facing messages + status codes
+     ↑ transforms
+Business logic layer: Domain-specific errors (NotFound, Conflict, Validation)
+     ↑ wraps with context
+Data/infrastructure layer: Infrastructure errors (DB timeout, network failure)
+```
+
+**Go Error Patterns:**
+```go
+// Sentinel errors for expected conditions
+var ErrNotFound = errors.New("not found")
+var ErrConflict = errors.New("conflict")
+
+// Wrapping for context
+return fmt.Errorf("getting user %s: %w", id, err)
+
+// Checking with errors.Is / errors.As
+if errors.Is(err, ErrNotFound) {
+    // handle not found
+}
+```
+
+---
+
+### Step 6: Testing Strategy
+
+**Goal:** Design for testability from the start — not as an afterthought.
+
+**Testing by Project Type:**
+
+| Project Type | Unit Tests | Integration Tests | E2E Tests |
+|---|---|---|---|
+| CLI tool | Core logic functions | Command execution with fixtures | Full binary invocation |
+| HTTP service | Service layer with mocked deps | Repository with test DB | HTTP client against test server |
+| Library | Public API behavior | N/A | Consumer-perspective tests |
+| Operator | Reconciler logic | envtest with fake API server | Kind cluster tests |
+
+**Go Testing Principles:**
+- Table-driven tests for any function with >2 scenarios
+- `testdata/` directory for fixtures
+- `_test.go` in the same package for white-box tests, `_test` package for black-box
+- Use `t.Parallel()` for independent tests
+- Use `t.Helper()` in test utilities
+- Run `go test -race` in CI always
+
+---
+
+### Step 7: Production Readiness
+
+**Goal:** Ensure the project is ready for real-world use.
+
+**Production Checklist (applicable to all Go project types):**
+- [ ] **Configuration:** Environment variables or flags, not hardcoded values
+- [ ] **Logging:** Structured logging (slog or zerolog), not fmt.Println
+- [ ] **Context:** All long operations accept `context.Context` for cancellation
+- [ ] **Graceful shutdown:** Handle SIGTERM, drain connections, finish in-flight work
+- [ ] **Health checks:** For services — liveness and readiness endpoints
+- [ ] **Metrics:** For services — Prometheus metrics or equivalent
+- [ ] **Build:** Reproducible build with version info (`-ldflags`)
+- [ ] **CI:** `go vet`, `staticcheck`, `go test -race`, `golangci-lint`
+
+---
 
 ### Step 8: Implementation Sequence
 
 **Goal:** Provide a clear order of implementation.
 
-**Recommended Order:**
-1. Schema migrations and sqlc queries
-2. Repository layer (generated code + custom queries)
-3. Service layer with business logic
-4. Handler layer with validation
-5. Middleware (auth, logging, error handling)
-6. Integration tests
-7. Documentation (OpenAPI spec)
+**General Sequence (adapt per project type):**
+1. Define the module structure and `go.mod`
+2. Define the core domain types and interfaces
+3. Implement the inner layer (business logic / core algorithm)
+4. Implement the outer layer (HTTP handlers, CLI commands, data access)
+5. Wire everything together in `main.go`
+6. Add tests at each layer
+7. Add production concerns (logging, metrics, graceful shutdown)
+8. Documentation (README, godoc, OpenAPI if applicable)
+
+---
 
 ## Usage
 
-
-### Initialize SQLC
+### Initialize SQLC (for projects with database access)
 
 ```bash
 bash /mnt/skills/user/golang-architect/scripts/sqlc-init.sh [project-dir] [db-engine]
@@ -206,128 +323,19 @@ bash /mnt/skills/user/golang-architect/scripts/sqlc-init.sh ./my-project postgre
 **Context7 Library ID:** `/websites/gin-gonic_en` (117 snippets, Score: 90.8)
 
 **Official Documentation:**
+- Go: `https://go.dev/doc/`
+- Effective Go: `https://go.dev/doc/effective_go`
 - Gin: `https://gin-gonic.com/en/docs/`
 - sqlc: `https://docs.sqlc.dev/`
-- Supabase: Use `mcp__supabase__*` tools
-- go-symphony: `https://github.com/Tomlord1122/go-symphony`
-
-## Layered Architecture Template
-
-```
-project/
-├── cmd/
-│   └── api/
-│       └── main.go           # Entry point
-├── internal/
-│   ├── handler/              # HTTP handlers (Gin)
-│   │   └── user_handler.go
-│   ├── service/              # Business logic
-│   │   └── user_service.go
-│   ├── repository/           # Data access (sqlc)
-│   │   └── user_repository.go
-│   ├── middleware/           # Auth, logging, CORS
-│   │   └── auth.go
-│   └── dto/                  # Data Transfer Objects
-│       └── user_dto.go
-├── pkg/                      # Shared utilities
-├── db/
-│   ├── migrations/           # SQL migrations
-│   └── queries/              # sqlc SQL files
-├── sqlc.yaml
-└── go.mod
-```
-
-## sqlc Configuration
-
-```yaml
-# sqlc.yaml
-version: "2"
-sql:
-  - engine: "postgresql"
-    queries: "db/queries/"
-    schema: "db/migrations/"
-    gen:
-      go:
-        package: "repository"
-        out: "internal/repository"
-        sql_package: "pgx/v5"
-        emit_json_tags: true
-        emit_interface: true
-```
-
-## Handler Pattern
-
-```go
-type UserHandler struct {
-    service *service.UserService
-}
-
-func NewUserHandler(s *service.UserService) *UserHandler {
-    return &UserHandler{service: s}
-}
-
-func (h *UserHandler) GetUser(c *gin.Context) {
-    id := c.Param("id")
-    user, err := h.service.GetUser(c.Request.Context(), id)
-    if err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, user)
-}
-```
-
-## Middleware Pattern
-
-```go
-func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
-    return func(c *gin.Context) {
-        token := c.GetHeader("Authorization")
-        if token == "" {
-            c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
-            return
-        }
-        // Validate token...
-        c.Set("userID", claims.UserID)
-        c.Next()
-    }
-}
-```
-
-## Error Handling
-
-```go
-// Custom error types
-type AppError struct {
-    Code    int    `json:"code"`
-    Message string `json:"message"`
-}
-
-func (e *AppError) Error() string {
-    return e.Message
-}
-
-// Error middleware
-func ErrorHandler() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        c.Next()
-        if len(c.Errors) > 0 {
-            err := c.Errors.Last().Err
-            if appErr, ok := err.(*AppError); ok {
-                c.JSON(appErr.Code, appErr)
-                return
-            }
-            c.JSON(500, gin.H{"error": "internal server error"})
-        }
-    }
-}
-```
+- cobra (CLI): `https://cobra.dev/`
+- controller-runtime: `https://pkg.go.dev/sigs.k8s.io/controller-runtime`
 
 ## Present Results to User
 
-When providing Go backend solutions:
+When providing Go architecture solutions:
+- Match the complexity of the recommendation to the complexity of the project
 - Follow Go conventions (Effective Go, uber-go/guide)
-- Use dependency injection for testability
+- Use dependency injection for testability — but without a framework
 - Provide complete error handling examples
 - Include context propagation for cancellation
 - Show corresponding tests when appropriate
@@ -335,15 +343,21 @@ When providing Go backend solutions:
 ## Troubleshooting
 
 **"sqlc generate fails"**
-- Verify PostgreSQL syntax in queries
+- Verify SQL syntax in queries matches the engine
 - Check schema matches query expectations
 - Run `sqlc vet` for detailed errors
 
-**"Gin handler not receiving body"**
-- Ensure `Content-Type: application/json` header
-- Check if body was already read (bind only once)
-- Use `ShouldBindJSON` instead of `BindJSON` for error control
+**"Circular import"**
+- This is an architectural signal — the packages have a tangled dependency
+- Extract a shared interface or type into a separate package
+- Or merge the two packages if they belong together
+
+**"Too many packages"**
+- Go packages should be meaningful, not just folders
+- If a package has only one file, consider merging it with its consumer
+- If every function is in its own package, the structure is too fine-grained
 
 **"Context cancelled"**
 - Propagate context through all layers
 - Check for long-running operations without timeout
+- Ensure goroutines respect context cancellation

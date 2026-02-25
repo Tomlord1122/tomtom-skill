@@ -8,6 +8,19 @@ PROJECT_DIR="${1:-.}"
 BENCH_PATTERN="${2:-.}"
 PROFILE_TYPE="${3:-none}"
 
+# Input validation: sanitize BENCH_PATTERN to only allow safe benchmark patterns
+# Valid Go benchmark patterns contain only alphanumeric chars, underscores, dots, slashes, carets, dollars, and stars
+if [[ ! "$BENCH_PATTERN" =~ ^[a-zA-Z0-9_./*^$]+$ ]]; then
+    echo "Error: Invalid benchmark pattern. Only alphanumeric characters, underscores, dots, slashes, carets, dollars, and stars are allowed." >&2
+    exit 1
+fi
+
+# Input validation: PROJECT_DIR must be an existing directory
+if [ ! -d "$PROJECT_DIR" ]; then
+    echo "Error: Project directory '$PROJECT_DIR' does not exist." >&2
+    exit 1
+fi
+
 cd "$PROJECT_DIR"
 
 echo "Running Go benchmarks in: $(pwd)" >&2
@@ -49,18 +62,18 @@ Profile Analysis:
 EOF
 }
 
-# Build benchmark command
-BENCH_CMD="go test -bench=$BENCH_PATTERN -benchmem -run=^$"
+# Build benchmark command using arrays to prevent flag injection
+BENCH_CMD=(go test "-bench=$BENCH_PATTERN" -benchmem "-run=^$")
 
 case "$PROFILE_TYPE" in
     cpu)
-        BENCH_CMD="$BENCH_CMD -cpuprofile=$OUTPUT_DIR/cpu_$TIMESTAMP.prof"
+        BENCH_CMD+=("-cpuprofile=$OUTPUT_DIR/cpu_$TIMESTAMP.prof")
         ;;
     mem)
-        BENCH_CMD="$BENCH_CMD -memprofile=$OUTPUT_DIR/mem_$TIMESTAMP.prof"
+        BENCH_CMD+=("-memprofile=$OUTPUT_DIR/mem_$TIMESTAMP.prof")
         ;;
     all)
-        BENCH_CMD="$BENCH_CMD -cpuprofile=$OUTPUT_DIR/cpu_$TIMESTAMP.prof -memprofile=$OUTPUT_DIR/mem_$TIMESTAMP.prof"
+        BENCH_CMD+=("-cpuprofile=$OUTPUT_DIR/cpu_$TIMESTAMP.prof" "-memprofile=$OUTPUT_DIR/mem_$TIMESTAMP.prof")
         ;;
     none)
         ;;
@@ -71,12 +84,12 @@ case "$PROFILE_TYPE" in
         ;;
 esac
 
-BENCH_CMD="$BENCH_CMD ./..."
+BENCH_CMD+=("./...")
 
-echo "Executing: $BENCH_CMD" >&2
+echo "Executing: ${BENCH_CMD[*]}" >&2
 RESULT_FILE="$OUTPUT_DIR/benchmark_$TIMESTAMP.txt"
 
-if $BENCH_CMD 2>&1 | tee "$RESULT_FILE"; then
+if "${BENCH_CMD[@]}" 2>&1 | tee "$RESULT_FILE"; then
     # Extract benchmark summary
     BENCH_COUNT=$(grep -c "^Benchmark" "$RESULT_FILE" 2>/dev/null || echo "0")
 

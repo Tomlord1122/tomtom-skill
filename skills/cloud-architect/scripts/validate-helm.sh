@@ -8,6 +8,24 @@ CHART_PATH="${1:-.}"
 VALUES_FILE="${2:-}"
 KUBE_VERSION="${3:-1.28.0}"
 
+# Input validation: CHART_PATH must be an existing directory
+if [ ! -d "$CHART_PATH" ]; then
+    echo "Error: Chart path '$CHART_PATH' is not a valid directory." >&2
+    exit 1
+fi
+
+# Input validation: VALUES_FILE must exist if specified
+if [ -n "$VALUES_FILE" ] && [ ! -f "$VALUES_FILE" ]; then
+    echo "Error: Values file '$VALUES_FILE' does not exist." >&2
+    exit 1
+fi
+
+# Input validation: KUBE_VERSION must be a valid semver-like version
+if [[ ! "$KUBE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Error: Invalid Kubernetes version '$KUBE_VERSION'. Expected format: X.Y.Z" >&2
+    exit 1
+fi
+
 echo "Validating Helm chart: $CHART_PATH" >&2
 
 cleanup() {
@@ -60,14 +78,14 @@ CHART_NAME=$(grep "^name:" "$CHART_PATH/Chart.yaml" | awk '{print $2}')
 CHART_VERSION=$(grep "^version:" "$CHART_PATH/Chart.yaml" | awk '{print $2}')
 echo "Chart: $CHART_NAME v$CHART_VERSION" >&2
 
-# 1. Helm lint
+# 1. Helm lint (using arrays to prevent command injection)
 echo "Running helm lint..." >&2
-LINT_CMD="helm lint $CHART_PATH"
+LINT_CMD=(helm lint "$CHART_PATH")
 if [ -n "$VALUES_FILE" ]; then
-    LINT_CMD="$LINT_CMD -f $VALUES_FILE"
+    LINT_CMD+=(-f "$VALUES_FILE")
 fi
 
-LINT_OUTPUT=$($LINT_CMD 2>&1 || true)
+LINT_OUTPUT=$("${LINT_CMD[@]}" 2>&1 || true)
 if echo "$LINT_OUTPUT" | grep -q "Error:"; then
     RESULTS+=('{"check": "helm lint", "status": "fail"}')
     echo "helm lint: FAIL" >&2
@@ -82,15 +100,15 @@ else
     echo "helm lint: PASS" >&2
 fi
 
-# 2. Helm template (syntax validation)
+# 2. Helm template (syntax validation, using arrays to prevent command injection)
 echo "Running helm template..." >&2
 TEMP_DIR=$(mktemp -d)
-TEMPLATE_CMD="helm template test-release $CHART_PATH --kube-version $KUBE_VERSION"
+TEMPLATE_CMD=(helm template test-release "$CHART_PATH" --kube-version "$KUBE_VERSION")
 if [ -n "$VALUES_FILE" ]; then
-    TEMPLATE_CMD="$TEMPLATE_CMD -f $VALUES_FILE"
+    TEMPLATE_CMD+=(-f "$VALUES_FILE")
 fi
 
-if $TEMPLATE_CMD > "$TEMP_DIR/rendered.yaml" 2>&1; then
+if "${TEMPLATE_CMD[@]}" > "$TEMP_DIR/rendered.yaml" 2>&1; then
     MANIFEST_COUNT=$(grep -c "^---" "$TEMP_DIR/rendered.yaml" || echo "0")
     RESULTS+=('{"check": "helm template", "status": "pass", "manifests": '"$MANIFEST_COUNT"'}')
     echo "helm template: PASS ($MANIFEST_COUNT manifests)" >&2
@@ -129,7 +147,7 @@ else
     ((WARNINGS += BEST_PRACTICE_ISSUES))
 fi
 
-# 4. Dependency check
+# 4. Dependency check (only with --skip-refresh to avoid unexpected network calls)
 if [ -f "$CHART_PATH/Chart.lock" ]; then
     echo "Checking dependencies..." >&2
     if helm dependency build "$CHART_PATH" --skip-refresh > /dev/null 2>&1; then

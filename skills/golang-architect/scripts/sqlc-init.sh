@@ -7,21 +7,36 @@ set -e
 PROJECT_DIR="${1:-.}"
 DB_ENGINE="${2:-postgresql}"
 
+# Input validation: PROJECT_DIR must be an existing directory
+if [ ! -d "$PROJECT_DIR" ]; then
+    echo "Error: Project directory '$PROJECT_DIR' does not exist." >&2
+    exit 1
+fi
+
+# Input validation: DB_ENGINE must be one of the supported engines
+case "$DB_ENGINE" in
+    postgresql|mysql|sqlite3)
+        ;;
+    *)
+        echo "Error: Unsupported database engine '$DB_ENGINE'. Must be one of: postgresql, mysql, sqlite3" >&2
+        exit 1
+        ;;
+esac
+
 cleanup() {
     echo "Cleanup completed" >&2
 }
 trap cleanup EXIT
 
-# Check if sqlc is installed
+# Check if sqlc is installed (do NOT auto-install from remote)
 check_sqlc() {
     if ! command -v sqlc &> /dev/null; then
-        echo "sqlc not found. Installing..." >&2
-        go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-        if [ $? -ne 0 ]; then
-            echo '{"success": false, "error": "Failed to install sqlc"}'
-            exit 1
-        fi
-        echo "sqlc installed successfully" >&2
+        echo "Error: sqlc is not installed." >&2
+        echo "Please install sqlc manually before running this script:" >&2
+        echo "  go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest" >&2
+        echo "  or visit https://docs.sqlc.dev/en/latest/overview/install.html" >&2
+        echo '{"success": false, "error": "sqlc is not installed. Please install it manually."}'
+        exit 1
     fi
 }
 
@@ -52,6 +67,19 @@ cd "$PROJECT_DIR"
 echo "Initializing sqlc in: $(pwd)" >&2
 check_sqlc
 
+# Determine the sql_package based on DB_ENGINE
+case "$DB_ENGINE" in
+    postgresql)
+        SQL_PACKAGE="pgx/v5"
+        ;;
+    mysql)
+        SQL_PACKAGE="database/sql"
+        ;;
+    sqlite3)
+        SQL_PACKAGE="database/sql"
+        ;;
+esac
+
 # Create directories
 echo "Creating directory structure..." >&2
 mkdir -p db/migrations
@@ -59,6 +87,7 @@ mkdir -p db/queries
 mkdir -p internal/repository
 
 # Create sqlc.yaml
+# DB_ENGINE is validated above via allowlist so it is safe to interpolate
 echo "Creating sqlc.yaml..." >&2
 cat > sqlc.yaml << EOF
 version: "2"
@@ -70,7 +99,7 @@ sql:
       go:
         package: "repository"
         out: "internal/repository"
-        sql_package: "pgx/v5"
+        sql_package: "$SQL_PACKAGE"
         emit_json_tags: true
         emit_prepared_queries: false
         emit_interface: true

@@ -7,6 +7,18 @@ set -e
 TF_DIR="${1:-.}"
 CHECK_FORMAT="${2:-true}"
 
+# Input validation: TF_DIR must be an existing directory
+if [ ! -d "$TF_DIR" ]; then
+    echo "Error: Terraform directory '$TF_DIR' does not exist." >&2
+    exit 1
+fi
+
+# Input validation: CHECK_FORMAT must be "true" or "false"
+if [ "$CHECK_FORMAT" != "true" ] && [ "$CHECK_FORMAT" != "false" ]; then
+    echo "Error: CHECK_FORMAT must be 'true' or 'false', got '$CHECK_FORMAT'." >&2
+    exit 1
+fi
+
 echo "Validating Terraform configuration: $TF_DIR" >&2
 
 cleanup() {

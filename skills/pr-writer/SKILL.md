@@ -1,6 +1,6 @@
 ---
 name: pr-writer
-description: Write pull request titles and descriptions in Tom's house style. Use when the user asks to create a PR, open a pull request, or write a PR description. Trigger phrases: "make a PR", "create a PR", "write a PR description", "open a pull request".
+description: 'Write pull request titles and descriptions in Tom''s house style. Use when the user asks to create a PR, open a pull request, or write a PR description. Trigger phrases include "make a PR", "create a PR", "write a PR description", "open a pull request".'
 ---
 
 # PR Writer

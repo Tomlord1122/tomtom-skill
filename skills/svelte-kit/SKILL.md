@@ -7,6 +7,17 @@ description: Svelte 5 and SvelteKit syntax expert. Use when working with .svelte
 
 Expert assistant for Svelte 5 runes syntax, SvelteKit routing, SSR/SSG strategies, and component design patterns.
 
+## Mindset Shift (Svelte 4 → 5)
+
+Default to Svelte 5 runes and modern SvelteKit conventions. The biggest mental shifts:
+
+- **Stores → runes.** Reach for `$state`/`$derived` over `writable`/`$:`. `$state` objects/arrays are deeply reactive **proxies**.
+- **`$effect` is a last resort, not a sync tool.** Derive with `$derived`; only use `$effect` for genuine side effects (DOM, logging, subscriptions).
+- **Slots → snippets.** `{#snippet}` / `{@render}` replace `<slot>`.
+- **`on:click` → `onclick`.** Events are plain attributes now (no colon).
+- **`$app/stores` → `$app/state`.** Fine-grained, no `$` prefix needed.
+- **`export let` → `$props()`** with `PageProps`/`LayoutProps` from `$types`.
+
 ## Thinking Process
 
 When activated, follow this structured thinking approach to solve Svelte/SvelteKit problems:
@@ -76,18 +87,7 @@ When activated, follow this structured thinking approach to solve Svelte/SvelteK
 - Different content between server and client render
 - Accessing cookies/headers incorrectly
 
-**SSR Safety Pattern:**
-```svelte
-<script>
-  import { browser } from '$app/environment';
-
-  $effect(() => {
-    if (browser) {
-      // Safe to use browser APIs here
-    }
-  });
-</script>
-```
+**SSR Safety Pattern:** guard browser-only APIs with `import { browser } from '$app/environment'`, and run DOM access inside `$effect(() => { if (browser) { /* ... */ } })` (effects are client-only).
 
 ### Step 4: Data Flow Design
 
@@ -112,6 +112,14 @@ When activated, follow this structured thinking approach to solve Svelte/SvelteK
 - "What validation is needed?"
 - "What should happen on success/failure?"
 
+**Load Rerun & Auth Implications:**
+- Rerun loads with `invalidate(url)` / `invalidateAll()`; declare deps with `depends()`; opt out of tracking with `untrack()`.
+- **Layout loads do not auto-rerun on client-side navigation.** For auth, prefer the `handle` hook or per-page server loads over a single root layout load.
+- When an action changes auth, update `event.locals` so subsequent loads see the new state.
+- Use `getRequestEvent()` (SvelteKit ≥ 2.20) in shared server functions to read `locals`/`url` without threading the event through params.
+
+**Streaming:** return an unawaited promise from a server load and render it with `{#await}` for progressive data.
+
 ### Step 5: Reactivity Design
 
 **Goal:** Apply correct reactivity patterns for the use case.
@@ -128,19 +136,33 @@ When activated, follow this structured thinking approach to solve Svelte/SvelteK
 
 **Reactivity Rules:**
 1. Only use `$state` for values that need to trigger updates
-2. Use `$derived` for any computed values (not manual updates)
-3. Use `$effect` sparingly - prefer declarative patterns
-4. Never mutate $derived values
+2. Use `$derived` for any computed values (not manual updates); keep derived expressions **pure** (no side effects). Use `$derived.by(() => { ... })` for multi-line logic.
+3. Use `$effect` sparingly — **only for genuine side effects** (DOM, logging, subscriptions), never to synchronize/derive state. Return a teardown function for cleanup.
+4. Never mutate `$derived` values to "fix" them with `$effect`. Derived values **can** be reassigned for optimistic UI and self-revert when dependencies change.
 
-**Common Mistakes:**
+**Deep Reactivity & State Nuances:**
+- `$state` objects/arrays are deeply reactive **proxies** — mutating nested fields triggers updates.
+- **Never destructure** reactive state or props — it captures a snapshot and breaks reactivity. Access fields directly (`obj.x`) or via getters.
+- `$state.raw(...)` — shallow/non-tracked state; reassign the whole value, don't mutate.
+- `$state.snapshot(...)` — plain (non-proxy) copy for passing to external/non-Svelte APIs.
+- Pass live state into functions via **getter functions** (`() => count`), not the bare variable.
+
+**Effect Variants:** `$effect.pre` (run before DOM update, e.g. autoscroll), `$effect.tracking()` (is this in a reactive context?), `$effect.root` (manually-scoped, manual cleanup).
+
+**Anti-Patterns to Avoid:**
 ```svelte
 <script>
-  // WRONG: Derived values should use $derived
-  let count = $state(0);
-  let doubled = count * 2; // Won't update when count changes!
+  // BAD: using $effect to derive/sync state
+  let doubled = $state(0);
+  $effect(() => { doubled = count * 2; }); // use $derived instead
 
-  // RIGHT: Use $derived for computed values
-  let doubled = $derived(count * 2);
+  // BAD: destructuring reactive state/props (loses reactivity)
+  let { user } = data;        // snapshot — won't update
+  let { x, y } = $state({ x: 0, y: 0 });
+
+  // BAD: mutating props
+  let { count } = $props();
+  count += 1;                 // props are read-only; use $bindable() for two-way
 </script>
 ```
 
@@ -195,43 +217,38 @@ When activated, follow this structured thinking approach to solve Svelte/SvelteK
 
 **Goal:** Provide good error experiences.
 
-**Error Boundaries:**
-- +error.svelte for route-level errors
-- try/catch in load functions
-- Form action error handling
+**Error Boundaries:** `+error.svelte` (route-level), try/catch in load functions,
+`fail()` in form actions, `<svelte:boundary>` (component-level, see Quick Reference).
 
-**Error Pattern:**
-```typescript
-// +page.server.ts
-export async function load({ params }) {
-  const item = await db.get(params.id);
-  if (!item) {
-    throw error(404, 'Item not found');
-  }
-  return { item };
-}
-```
+**Error Pattern:** throw `error(404, 'Not found')` from a load when data is missing;
+SvelteKit renders the nearest `+error.svelte` with `page.error`/`page.status`.
 
 ## Project Setup
 
 **Preferred Package Manager:** bun
 
 ```bash
-# Create new SvelteKit project
+# Create new SvelteKit project with the modern `sv` CLI
+# (replaces the deprecated `npm create svelte`)
 bunx sv create my-app
 cd my-app
 bun install
 bun run dev
 ```
 
+**Minimal modern dependencies** (all devDependencies): `@sveltejs/adapter-auto ^6`, `@sveltejs/kit ^2`, `@sveltejs/vite-plugin-svelte ^5`, `svelte ^5`, `vite ^6`.
+
 ## Documentation Resources
 
 **Context7 Library ID:** `/websites/svelte_dev` (5523 snippets, Score: 91)
 
-**Official llms.txt Resources:**
-- `https://svelte.dev/docs/llms` - Documentation index
-- `https://svelte.dev/docs/llms-full.txt` - Complete documentation
-- `https://svelte.dev/docs/llms-small.txt` - Compressed (~120KB)
+**AI usage guidance:** `https://svelte.dev/docs/ai`
+
+**Official llms.txt Resources** (package-level files; the old top-level `/docs/llms-small.txt` 404s):
+- `https://svelte.dev/llms.txt` - Documentation index
+- `https://svelte.dev/docs/svelte/llms-full.txt` - Complete Svelte docs
+- `https://svelte.dev/docs/svelte/llms-small.txt` - Compressed Svelte docs
+- `https://svelte.dev/docs/kit/llms.txt` - SvelteKit docs
 
 ## Quick Reference
 
@@ -250,69 +267,215 @@ bun run dev
     console.log(`Count is now ${count}`);
   });
 
-  // Props with defaults
-  let { name = 'World', onClick } = $props();
+  // Multi-line derived
+  let summary = $derived.by(() => items.reduce((a, b) => a + b.n, 0));
 
-  // Bindable props (two-way binding)
+  // Props: defaults, rename, rest
+  let { name = 'World', super: trouper, ...rest } = $props();
+
+  // Bindable props (opt-in two-way binding; default to one-way)
   let { value = $bindable() } = $props();
+
+  // SSR-safe unique id
+  const id = $props.id();
 </script>
+```
+
+### Modern Template Syntax
+
+```svelte
+<script>
+  import type { Snippet } from 'svelte';
+  let { header, children }: { header?: Snippet; children: Snippet } = $props();
+  let active = $state(true);
+</script>
+
+<!-- Events are plain attributes (no `on:` colon) -->
+<button onclick={() => (active = !active)}>Toggle</button>
+
+<!-- class accepts an object (clsx-like) -->
+<div class={{ active, disabled: !active }}>...</div>
+
+<!-- Snippets replace slots -->
+{#snippet row(label, value)}
+  <tr><th>{label}</th><td>{value}</td></tr>
+{/snippet}
+
+{@render header?.()}
+{@render children()}
+{@render row('Status', active ? 'on' : 'off')}
+
+<!-- Error boundary with failed/pending snippets -->
+<svelte:boundary>
+  <RiskyComponent />
+  {#snippet failed(error, reset)}
+    <p>{error.message}</p>
+    <button onclick={reset}>Retry</button>
+  {/snippet}
+</svelte:boundary>
 ```
 
 ### SvelteKit Routing
 
-```
-src/routes/
-├── +page.svelte          # /
-├── +page.server.ts       # Server load function
-├── +layout.svelte        # Root layout
-├── about/+page.svelte    # /about
-├── blog/
-│   ├── +page.svelte      # /blog
-│   └── [slug]/
-│       ├── +page.svelte  # /blog/:slug
-│       └── +page.ts      # Universal load
-└── api/posts/+server.ts  # API endpoint
-```
+Files under `src/routes/`: `+page.svelte` (UI), `+page.ts` (universal load),
+`+page.server.ts` (server load/actions), `+layout.svelte` / `+layout(.server).ts`
+(layouts), `+server.ts` (API endpoint), `+error.svelte` (error boundary).
+Dynamic segments use `[slug]`; rest params `[...rest]`; optional `[[lang]]`.
 
-### Load Functions
+### Load Functions & Typed Data
 
 ```typescript
 // +page.server.ts - Server-only
-export async function load({ params, locals, fetch }) {
+import type { PageServerLoad } from './$types';
+export const load: PageServerLoad = async ({ params, locals, fetch }) => {
   const post = await fetch(`/api/posts/${params.slug}`);
   return { post: await post.json() };
-}
+};
+```
 
-// +page.ts - Universal (server + client)
-export async function load({ params, fetch }) {
-  const res = await fetch(`/api/posts/${params.slug}`);
-  return { post: await res.json() };
-}
+```svelte
+<!-- +page.svelte - typed props (replaces `export let data`) -->
+<script lang="ts">
+  import type { PageProps } from './$types';
+  let { data }: PageProps = $props();
+</script>
+```
+
+### Page State (use `$app/state`, not `$app/stores`)
+
+```svelte
+<script>
+  // `$app/stores` is deprecated. `$app/state` is fine-grained, no `$` prefix.
+  import { page, navigating, updated } from '$app/state';
+</script>
+
+<p>Path: {page.url.pathname} · Status: {page.status}</p>
+{#if navigating.to}<progress></progress>{/if}
 ```
 
 ### Form Actions
 
 ```typescript
 // +page.server.ts
-export const actions = {
-  default: async ({ request }) => {
+import { fail } from '@sveltejs/kit';
+import type { Actions } from './$types';
+
+export const actions: Actions = {
+  default: async ({ request, locals }) => {
     const data = await request.formData();
     const email = data.get('email');
+    // Use fail() for validation errors — do NOT throw
+    if (!email) return fail(400, { email, missing: true });
     return { success: true };
-  },
-  delete: async ({ params }) => {
-    // Handle delete
   }
 };
 ```
+
+```svelte
+<!-- Progressive enhancement via use:enhance (not raw onsubmit) -->
+<script>
+  import { enhance } from '$app/forms';
+</script>
+<form method="POST" use:enhance>...</form>
+```
+
+### Page Options
+
+```typescript
+// +page.ts / +page.server.ts
+export const prerender = true;   // or false | 'auto'
+export const ssr = false;        // SPA shell (client-rendered)
+export const csr = false;        // static HTML, no JS/hydration
+
+// Dynamic prerender entries
+export function entries() {
+  return [{ slug: 'first' }, { slug: 'second' }];
+}
+```
+
+### Hooks
+
+| Hook | File | Scope | Purpose |
+|------|------|-------|---------|
+| `handle` / `handleFetch` / `init` | hooks.server | Server | Request interception, auth, fetch rewriting, startup |
+| `handleError` | hooks (.server/.client) | Shared | Centralized error logging/shaping |
+| `reroute` / `transport` | hooks | Universal | URL rewriting; custom-type (de)serialization across server↔client |
+
+## State Management
+
+- The server is **stateless** — never store per-user data in module-level globals (it leaks across requests). Keep load functions pure.
+- Share client state via the **context API** (`setContext`/`getContext`), URL params, or snapshots — not module-level mutable singletons.
+
+## Modern Patterns (Experimental — Opt-In)
+
+> These are **experimental** APIs. Enable them explicitly and prefer the stable runes/load/action patterns above unless a project has opted in.
+
+### Async Svelte
+
+Experimental in Svelte 5.36 (flag removed / default in Svelte 6). Allows `await` in top-level `<script>`, inside `$derived(...)`, and directly in markup.
+
+```js
+// svelte.config.js
+export default { compilerOptions: { experimental: { async: true } } };
+```
+
+```svelte
+<script>
+  let { id } = $props();
+  // await directly in $derived
+  let post = $derived(await getPost(id));
+</script>
+
+<!-- Must be wrapped by a boundary with a `pending` snippet -->
+<svelte:boundary>
+  <h1>{post.title}</h1>
+  {#snippet pending()}<p>loading…</p>{/snippet}
+</svelte:boundary>
+```
+
+- Detect in-flight async with `$effect.pending()`.
+- A `await_waterfall` warning fires when independent async work is needlessly serialized — start independent work together.
+- Errors bubble to the nearest `<svelte:boundary>`.
+
+### SvelteKit Remote Functions
+
+Opt-in type-safe server functions callable from the client; can **replace load functions and form actions**. Pairs naturally with async Svelte.
+
+```js
+// svelte.config.js
+export default { kit: { experimental: { remoteFunctions: true } } };
+```
+
+`.remote.ts` files export from `$app/server`:
+
+| Export | Use For | Highlights |
+|--------|---------|-----------|
+| `query` | Read dynamic data | Cached per-page, `.refresh()`, Standard Schema (Zod/Valibot) validation |
+| `form` | Form mutations | Spread `{...createPost}` onto `<form>`; progressive enhancement; single-flight `.updates()`; `withOverride` optimistic UI; `buttonProps` per-button |
+| `command` | Programmatic writes | `.updates(query())`; cannot run during render; no redirects |
+| `prerender` | Build-time reads | `inputs:` seeds; `{ dynamic: true }` option |
+
+```ts
+// data.remote.ts
+import { query } from '$app/server';
+import * as v from 'valibot';
+
+export const getPost = query(v.string(), async (slug) => {
+  return await db.posts.find(slug); // server-only, type-safe end to end
+});
+```
+
+- Validation failures return **400**; customize via `handleValidationError`.
+- `getRequestEvent()` works inside remote functions (no `params`/`route.id`; cookies only settable in `form`/`command`).
 
 ## Present Results to User
 
 When answering Svelte/SvelteKit questions:
 - Provide complete, runnable code examples
-- Use Svelte 5 runes syntax by default
+- Use Svelte 5 runes syntax and modern SvelteKit conventions (`$app/state`, `PageProps`, snippets) by default
 - Explain the difference between server and universal load functions
 - Note any breaking changes between SvelteKit versions
+- Flag experimental APIs (async Svelte, remote functions) as opt-in
 - Include TypeScript types when applicable
 
 ## Troubleshooting

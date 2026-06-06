@@ -173,15 +173,7 @@ Server Render → HTML with inline/critical CSS → Browser parses HTML
 - [ ] Non-critical CSS deferred
 - [ ] Fonts optimized (subset, preload, swap)
 
-**Bundle Analysis:**
-```bash
-# Check CSS size
-npx tailwindcss -o output.css --minify
-ls -lh output.css
-
-# Analyze what's included
-npx tailwindcss -o output.css --content ./src/**/*.{html,js,svelte}
-```
+**Bundle Analysis:** build with `--minify` and check the emitted CSS size; in v4 the output is driven by detected content, so unused utilities never ship.
 
 **Optimization Strategies:**
 
@@ -247,17 +239,7 @@ npx tailwindcss -o output.css --content ./src/**/*.{html,js,svelte}
 | Build too slow | Glob pattern specificity |
 | Bundle too large | Unused plugins, content paths |
 
-**Debug Commands:**
-```bash
-# Verify content detection
-DEBUG=tailwindcss:content npx tailwindcss build
-
-# Generate with verbose output
-npx tailwindcss -i input.css -o output.css --verbose
-
-# Check which classes are generated
-grep -o 'class="[^"]*"' src/**/*.svelte | sort | uniq
-```
+**Debug Commands:** `DEBUG=tailwindcss:content` to trace content detection; pass `--verbose` to the CLI to inspect the build; confirm dynamic classes literally appear in source (v4 detects whole class strings, not interpolated fragments).
 
 ## Documentation Resources
 
@@ -267,11 +249,37 @@ grep -o 'class="[^"]*"' src/**/*.svelte | sort | uniq
 
 **Official Documentation:**
 - Docs: `https://tailwindcss.com/docs`
+- Blog (release notes): `https://tailwindcss.com/blog`
 - Upgrade Guide: `https://tailwindcss.com/docs/upgrade-guide`
+
+## Install & Tooling
+
+Always install `tailwindcss@latest` alongside the matching first-party loader for
+your build tool — keep the two versions in sync.
+
+```bash
+# Vite (recommended for SvelteKit / Vite apps)
+npm i -D tailwindcss@latest @tailwindcss/vite@latest
+
+# PostCSS
+npm i -D tailwindcss@latest @tailwindcss/postcss@latest
+
+# CLI
+npm i -D tailwindcss@latest @tailwindcss/cli@latest
+
+# Webpack / Next.js (Turbopack) — first-party loader, 2x+ faster than the PostCSS path
+npm i -D tailwindcss@latest @tailwindcss/webpack@latest
+```
+
+| Build tool | Loader | Notes |
+|------------|--------|-------|
+| Vite | `@tailwindcss/vite` | Canonical path for SvelteKit; add to `vite.config` plugins |
+| Webpack / Next.js | `@tailwindcss/webpack` | First-party loader (v4.2+); faster than `@tailwindcss/postcss` |
+| PostCSS | `@tailwindcss/postcss` | Framework-agnostic fallback |
 
 ## TailwindCSS v4 Key Changes
 
-### CSS-First Configuration
+### CSS-First Configuration (v4.0)
 
 ```css
 /* v4 uses CSS @import instead of @tailwind directives */
@@ -285,7 +293,7 @@ grep -o 'class="[^"]*"' src/**/*.svelte | sort | uniq
 }
 ```
 
-### Automatic Content Detection
+### Automatic Content Detection (v4.0)
 
 ```css
 /* v4 auto-detects content, no config needed */
@@ -293,7 +301,7 @@ grep -o 'class="[^"]*"' src/**/*.svelte | sort | uniq
 @source "../components/**/*.tsx";
 ```
 
-### New Features
+### Core v4.0 Features
 
 ```css
 /* Container queries */
@@ -311,6 +319,46 @@ grep -o 'class="[^"]*"' src/**/*.svelte | sort | uniq
   background: oklch(0.7 0.15 200);
 }
 ```
+
+## What's New Since v4.0 (Changelog)
+
+Track the point releases — the skill must reflect the current feature set, not just v4.0.
+
+### v4.1
+- **`text-shadow-*`** utilities (`text-shadow-sm` … `text-shadow-lg`, color + opacity).
+- **`mask-*`** utilities: `mask-image`, mask composites, and gradient masks
+  (`mask-t-from-*`, `mask-radial-*`, etc.).
+
+### v4.2
+- **New palettes:** `mauve`, `olive`, `mist`, `taupe` (neutral-leaning ramps).
+- **`@tailwindcss/webpack`** first-party loader — 2x+ faster than the PostCSS path
+  (benefits Next.js / Turbopack).
+- **Expanded logical properties:** `pbs-*`/`pbe-*`, `mbs-*`/`mbe-*`,
+  `scroll-pbs-*`/`scroll-mbs-*`, `border-bs`/`border-be-*`, logical sizing
+  (`block-*`, `inline-*`, `min-block-*`, `max-inline-*`), and logical inset
+  (`inset-s-*`, `inset-e-*`, `inset-bs-*`, `inset-be-*`).
+- **Deprecation:** `start-*` / `end-*` → use `inset-s-*` / `inset-e-*`.
+- **`font-features-*`** for raw `font-feature-settings` (prefer high-level
+  utilities like `tabular-nums` first).
+
+### v4.3
+- **Scrollbar utilities:** `scrollbar-auto` / `scrollbar-thin` / `scrollbar-none`
+  (scrollbar-width); `scrollbar-thumb-*` / `scrollbar-track-*` (scrollbar-color,
+  support `/opacity`); `scrollbar-gutter-auto` / `-stable` / `-both`.
+- **`@container-size`:** creates a *size* container exposing block-axis query units
+  (`cqb`/`cqh`), unlike `@container` which only creates an inline-size container;
+  nameable via `@container-size/{name}`.
+- **`zoom-*`** utilities (`zoom-75`/`-100`/`-125`, arbitrary `zoom-[1.1]`, `zoom-(--var)`).
+- **`tab-*`** utilities for `tab-size` (`tab-2`/`tab-8`, arbitrary, var).
+- **Stacked + compound `@variant` in CSS:** `@variant hover:focus {}` and
+  `@variant hover, focus {}`.
+- **Default values for functional utilities** via `--default(…)` inside
+  `--value(…)`/`--modifier(…)`:
+  ```css
+  @utility tab-* {
+    tab-size: --value(integer, --default(4)); /* bare `tab` now works */
+  }
+  ```
 
 ## SSR Performance Checklist
 
@@ -337,6 +385,18 @@ grep -o 'class="[^"]*"' src/**/*.svelte | sort | uniq
 ## Framework Integration
 
 ### SvelteKit
+
+Canonical path: add the `@tailwindcss/vite` plugin, then `@import "tailwindcss"`
+in `app.css` and import it once in the root layout.
+
+```ts
+// vite.config.ts
+import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({ plugins: [tailwindcss(), sveltekit()] });
+```
 
 ```svelte
 <!-- +layout.svelte -->
@@ -383,9 +443,23 @@ import './globals.css';
 @import "tailwindcss/preflight" layer(base);
 ```
 
+## Mindset
+
+- **Components over CSS abstractions.** Prefer real, reusable components styled
+  with utilities over hiding utilities behind `@variant`/`@apply` in CSS.
+- **High-level utility before escape hatch.** Reach for `tabular-nums`,
+  logical `inset-s-*`, scrollbar/container utilities before arbitrary values or
+  raw `font-features-*`.
+- **CSS-first config stays the default.** Theme via `@theme` tokens; let v4
+  auto-detect content.
+- **Logical properties by default** for i18n/RTL-ready layouts
+  (`inset-s-*`/`pbs-*`), not the deprecated `start-*`/`end-*`.
+
 ## Browser Compatibility
 
-**TailwindCSS v4 requires:**
+**TailwindCSS v4 targets a modern baseline** (verify current minimums against the
+upgrade guide, and note that newer utilities such as `mask-*`/scrollbar-color may
+have stricter per-feature support):
 - Safari 16.4+
 - Chrome 111+
 - Firefox 128+
